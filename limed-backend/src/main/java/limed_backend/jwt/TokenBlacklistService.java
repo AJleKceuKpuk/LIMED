@@ -1,4 +1,4 @@
-package limed_backend.services;
+package limed_backend.jwt;
 
 import org.springframework.stereotype.Service;
 

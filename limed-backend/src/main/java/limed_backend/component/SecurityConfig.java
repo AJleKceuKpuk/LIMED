@@ -1,5 +1,6 @@
 package limed_backend.component;
 
+import limed_backend.jwt.JwtAuthenticationFilter;
 import limed_backend.services.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;

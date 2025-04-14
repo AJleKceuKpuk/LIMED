@@ -3,8 +3,8 @@ package limed_backend.controller;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import limed_backend.component.JwtUtil;
-import limed_backend.component.TokenResponse;
+import limed_backend.jwt.JwtUtil;
+import limed_backend.jwt.TokenResponse;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
