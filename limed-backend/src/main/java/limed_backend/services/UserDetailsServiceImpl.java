@@ -11,6 +11,7 @@ import static org.springframework.security.core.userdetails.User.builder;
 
 @Service
 @RequiredArgsConstructor
+
 public class UserDetailsServiceImpl implements UserDetailsService {
 
     private final UserRepository userRepository;
