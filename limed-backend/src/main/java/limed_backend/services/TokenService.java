@@ -1,8 +1,8 @@
 package limed_backend.services;
 
 import limed_backend.jwt.JwtUtil;
-import limed_backend.models.TokenRecord;
-import limed_backend.repository.TokenRecordRepository;
+import limed_backend.models.Token;
+import limed_backend.repository.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -15,7 +15,7 @@ public class TokenService {
     private JwtUtil jwtUtil;
 
     @Autowired
-    private TokenRecordRepository tokenRecordRepository;
+    private TokenRepository tokenRepository;
 
     public String issueAccessToken(String username) {
         // Генерация access token с jti
@@ -23,8 +23,8 @@ public class TokenService {
         String jti = jwtUtil.getJti(token);
         Date issuedAt = new Date();
         Date expiration = jwtUtil.getExpirationFromToken(token);
-        TokenRecord record = new TokenRecord(jti, username, issuedAt, expiration, "access");
-        tokenRecordRepository.save(record);
+        Token record = new Token(jti, username, issuedAt, expiration, "access");
+        tokenRepository.save(record);
         return token;
     }
 
@@ -34,8 +34,8 @@ public class TokenService {
         String jti = jwtUtil.getJti(token);
         Date issuedAt = new Date();
         Date expiration = jwtUtil.getExpirationFromToken(token);
-        TokenRecord record = new TokenRecord(jti, username, issuedAt, expiration, "refresh");
-        tokenRecordRepository.save(record);
+        Token record = new Token(jti, username, issuedAt, expiration, "refresh");
+        tokenRepository.save(record);
         return token;
     }
 }

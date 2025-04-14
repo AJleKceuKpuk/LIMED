@@ -8,7 +8,7 @@ import java.util.Date;
 @Entity
 @Data
 @Table(name = "token_records")
-public class TokenRecord {
+public class Token {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -34,10 +34,10 @@ public class TokenRecord {
     @Column(nullable = false)
     private String tokenType;
 
-    public TokenRecord() {
+    public Token() {
     }
 
-    public TokenRecord(String jti, String username, Date issuedAt, Date expiration, String tokenType) {
+    public Token(String jti, String username, Date issuedAt, Date expiration, String tokenType) {
         this.jti = jti;
         this.username = username;
         this.issuedAt = issuedAt;

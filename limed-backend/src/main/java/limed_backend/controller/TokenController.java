@@ -5,8 +5,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import limed_backend.dto.TokenResponse;
 import limed_backend.jwt.JwtUtil;
-import limed_backend.models.TokenRecord;
-import limed_backend.repository.TokenRecordRepository;
+import limed_backend.models.Token;
+import limed_backend.repository.TokenRepository;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Date;
@@ -17,11 +17,11 @@ import java.util.List;
 public class TokenController {
 
     private final JwtUtil jwtUtil;
-    private final TokenRecordRepository tokenRecordRepository;
+    private final TokenRepository tokenRepository;
 
-    public TokenController(JwtUtil jwtUtil, TokenRecordRepository tokenRecordRepository) {
+    public TokenController(JwtUtil jwtUtil, TokenRepository tokenRepository) {
         this.jwtUtil = jwtUtil;
-        this.tokenRecordRepository = tokenRecordRepository;
+        this.tokenRepository = tokenRepository;
     }
 
     /**
@@ -72,7 +72,7 @@ public class TokenController {
      * Этот эндпоинт пригоден для аудита и административных целей.
      */
     @GetMapping("/active")
-    public List<TokenRecord> getActiveTokens() {
-        return tokenRecordRepository.findByRevokedFalseAndExpirationAfter(new Date());
+    public List<Token> getActiveTokens() {
+        return tokenRepository.findByRevokedFalseAndExpirationAfter(new Date());
     }
 }
