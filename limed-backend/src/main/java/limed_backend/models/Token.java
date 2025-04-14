@@ -2,6 +2,7 @@ package limed_backend.models;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.Getter;
 
 import java.util.Date;
 
@@ -27,10 +28,12 @@ public class Token {
     private Date expiration;
 
     // Флаг, отражающий, отозван ли токен
+    @Getter
     @Column(nullable = false)
     private Boolean revoked = false;
 
     // Время, когда токен был отозван. При создании токена это поле будет null.
+    @Getter
     @Temporal(TemporalType.TIMESTAMP)
     private Date revokedAt;
 
@@ -51,18 +54,7 @@ public class Token {
         this.revokedAt = null;
     }
 
-    // Геттеры и сеттеры можно оставить, с Lombok они генерируются автоматически,
-    // но добавим кастомную логику для установки revoked и revokedAt.
 
-    public Boolean getRevoked() {
-        return revoked;
-    }
-
-    /**
-     * Устанавливает статус отзыва токена.
-     * Если статус переводят в true, устанавливает revokedAt в текущее время.
-     * Если сбрасывают отзыв (при необходимости), revokedAt сбрасывается в null.
-     */
     public void setRevoked(Boolean revoked) {
         this.revoked = revoked;
         if (revoked) {
@@ -76,13 +68,8 @@ public class Token {
         }
     }
 
-    public Date getRevokedAt() {
-        return revokedAt;
-    }
-
     public void setRevokedAt(Date revokedAt) {
         this.revokedAt = revokedAt;
     }
 
-    // Остальные геттеры и сеттеры генерируются Lombok (@Data) или реализуются аналогично выше.
 }

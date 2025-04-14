@@ -4,7 +4,9 @@ import limed_backend.jwt.JwtUtil;
 import limed_backend.models.Token;
 import limed_backend.repository.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
 
@@ -17,12 +19,10 @@ public class TokenService {
     @Autowired
     private TokenRepository tokenRepository;
 
-    /**
-     * Выдает access token для заданного пользователя.
-     *
-     * @param username Имя пользователя.
-     * @return Сгенерированный access token.
-     */
+    public TokenService(TokenRepository tokenRepository) {
+        this.tokenRepository = tokenRepository;
+    }
+
     public String issueAccessToken(String username) {
         // Генерация access token с уникальным идентификатором (jti)
         String token = jwtUtil.generateAccessToken(username);
@@ -66,5 +66,18 @@ public class TokenService {
             token.setRevoked(true); // При установке true, метод setRevoked() сам выставит revokedAt
             tokenRepository.save(token);
         }
+    }
+
+    /**
+     * Метод запускается по расписанию каждый день в 16:38.
+     * Аннотация @Transactional гарантирует, что операции удаления будут
+     * выполнены в транзакционном контексте.
+     */
+    @Scheduled(cron = "0 46 16 * * ?")
+    @Transactional
+    public void cleanupExpiredTokens() {
+        Date now = new Date();
+        int deletedCount = tokenRepository.deleteAllByExpirationBefore(now);
+        System.out.println("Deleted " + deletedCount + " old tokens.");
     }
 }
