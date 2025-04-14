@@ -1,6 +1,6 @@
-package limed_backend.repository;
+package com.limed_backend.security.repository;
 
-import limed_backend.models.Token;
+import com.limed_backend.security.entity.Token;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 

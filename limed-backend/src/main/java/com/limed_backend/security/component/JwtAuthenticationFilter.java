@@ -1,12 +1,12 @@
-package limed_backend.jwt;
+package com.limed_backend.security.component;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import limed_backend.models.Token;
-import limed_backend.repository.TokenRepository;
-import limed_backend.services.UserDetailsServiceImpl;
+import com.limed_backend.security.entity.Token;
+import com.limed_backend.security.repository.TokenRepository;
+import com.limed_backend.security.service.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -21,7 +21,7 @@ import java.util.Date;
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtCore jwtCore;
 
     @Autowired
     private UserDetailsServiceImpl customUserDetailsService;
@@ -38,9 +38,9 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         // Извлекаем JWT из заголовка Authorization
         String jwt = getJwtFromRequest(request);
 
-        if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
+        if (StringUtils.hasText(jwt) && jwtCore.validateToken(jwt)) {
             // Получаем уникальный идентификатор токена (jti)
-            String jti = jwtUtil.getJti(jwt);
+            String jti = jwtCore.getJti(jwt);
 
             // Извлекаем запись токена из базы данных
             Token tokenRecord = tokenRepository.findByJti(jti);
@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             }
 
             // Если токен валидный, продолжаем обработку
-            String username = jwtUtil.getUsernameFromToken(jwt);
+            String username = jwtCore.getUsernameFromToken(jwt);
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
             UsernamePasswordAuthenticationToken authentication =

@@ -1,8 +1,8 @@
-package limed_backend.services;
+package com.limed_backend.security.service;
 
-import limed_backend.jwt.JwtUtil;
-import limed_backend.models.Token;
-import limed_backend.repository.TokenRepository;
+import com.limed_backend.security.component.JwtCore;
+import com.limed_backend.security.entity.Token;
+import com.limed_backend.security.repository.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -14,7 +14,7 @@ import java.util.Date;
 public class TokenService {
 
     @Autowired
-    private JwtUtil jwtUtil;
+    private JwtCore jwtCore;
 
     @Autowired
     private TokenRepository tokenRepository;
@@ -25,10 +25,10 @@ public class TokenService {
 
     public String issueAccessToken(String username) {
         // Генерация access token с уникальным идентификатором (jti)
-        String token = jwtUtil.generateAccessToken(username);
-        String jti = jwtUtil.getJti(token);
+        String token = jwtCore.generateAccessToken(username);
+        String jti = jwtCore.getJti(token);
         Date issuedAt = new Date();
-        Date expiration = jwtUtil.getExpirationFromToken(token);
+        Date expiration = jwtCore.getExpirationFromToken(token);
         // Создаем запись токена: по умолчанию revoked == false и revokedAt == null
         Token record = new Token(jti, username, issuedAt, expiration, "access");
         tokenRepository.save(record);
@@ -43,10 +43,10 @@ public class TokenService {
      */
     public String issueRefreshToken(String username) {
         // Генерация refresh token с уникальным идентификатором (jti)
-        String token = jwtUtil.generateRefreshToken(username);
-        String jti = jwtUtil.getJti(token);
+        String token = jwtCore.generateRefreshToken(username);
+        String jti = jwtCore.getJti(token);
         Date issuedAt = new Date();
-        Date expiration = jwtUtil.getExpirationFromToken(token);
+        Date expiration = jwtCore.getExpirationFromToken(token);
         // Создаем запись токена: по умолчанию revoked == false и revokedAt == null
         Token record = new Token(jti, username, issuedAt, expiration, "refresh");
         tokenRepository.save(record);
@@ -69,11 +69,11 @@ public class TokenService {
     }
 
     /**
-     * Метод запускается по расписанию каждый день в 16:38.
+     * Метод запускается по расписанию каждый день в 08:00.
      * Аннотация @Transactional гарантирует, что операции удаления будут
      * выполнены в транзакционном контексте.
      */
-    @Scheduled(cron = "0 46 16 * * ?")
+    @Scheduled(cron = "0 0 8 * * ?")
     @Transactional
     public void cleanupExpiredTokens() {
         Date now = new Date();

@@ -1,4 +1,4 @@
-package limed_backend;
+package com.limed_backend;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;

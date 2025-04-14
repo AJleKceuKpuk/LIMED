@@ -1,8 +1,9 @@
-package limed_backend.models;
+package com.limed_backend.security.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.Getter;
+import lombok.Setter;
 
 import java.util.Date;
 
@@ -33,6 +34,7 @@ public class Token {
     private Boolean revoked = false;
 
     // Время, когда токен был отозван. При создании токена это поле будет null.
+    @Setter
     @Getter
     @Temporal(TemporalType.TIMESTAMP)
     private Date revokedAt;
@@ -66,10 +68,6 @@ public class Token {
             // При сбросе статуса отзыва можно очищать значение revokedAt.
             this.revokedAt = null;
         }
-    }
-
-    public void setRevokedAt(Date revokedAt) {
-        this.revokedAt = revokedAt;
     }
 
 }

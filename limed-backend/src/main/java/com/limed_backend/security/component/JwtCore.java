@@ -1,4 +1,4 @@
-package limed_backend.jwt;
+package com.limed_backend.security.component;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
@@ -13,7 +13,7 @@ import java.util.UUID;
 
 @Component
 @Data
-public class JwtUtil {
+public class JwtCore {
 
     @Value("${app.jwt.secret}")
     private String jwtSecret;
