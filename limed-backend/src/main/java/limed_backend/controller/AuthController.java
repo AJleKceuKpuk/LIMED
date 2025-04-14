@@ -11,6 +11,7 @@ import limed_backend.models.Role;
 import limed_backend.models.User;
 import limed_backend.repository.RoleRepository;
 import limed_backend.repository.UserRepository;
+import limed_backend.services.TokenBlacklistService;
 import lombok.Data;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Collections;
+import java.util.Date;
 
 @RestController
 @RequestMapping
@@ -41,6 +43,9 @@ public class AuthController {
 
     @Autowired
     private RoleRepository roleRepository;
+
+    @Autowired
+    private TokenBlacklistService tokenBlacklistService;
 
     @GetMapping("/start")
     public String welcome() {
@@ -108,20 +113,64 @@ public class AuthController {
 //        return "Вы вышли из системы";
 //    }
 
+//    @PostMapping("/logout")
+//    public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
+//        // Удаляем refresh token из httpOnly cookie, выставляя maxAge в 0
+//        Cookie refreshCookie = new Cookie("refreshToken", null);
+//        refreshCookie.setHttpOnly(true);
+//        refreshCookie.setSecure(true);
+//        refreshCookie.setPath("/");
+//        refreshCookie.setMaxAge(0);        // Указывает браузеру удалить куку
+//        response.addCookie(refreshCookie);
+//
+//        // Если у вас реализована серверная логика проверки токенов или хранение токенов,
+//        // здесь можно реализовать деактивацию access token и refresh token на стороне сервера.
+//
+//        return ResponseEntity.ok("Вы вышли из системы");
+//    }
+
+
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
-        System.out.println("Выход?");
-        // Удаляем refresh token из httpOnly cookie, выставляя maxAge в 0
-        Cookie refreshCookie = new Cookie("refreshToken", null);
-        refreshCookie.setHttpOnly(true);
-        refreshCookie.setSecure(true);
-        refreshCookie.setPath("/");
-        refreshCookie.setMaxAge(0);        // Указывает браузеру удалить куку
-        response.addCookie(refreshCookie);
+        // Обработка refresh token из cookie
+        Cookie[] cookies = request.getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    try {
+                        String refreshToken = cookie.getValue();
+                        String refreshJti = jwtUtil.getJti(refreshToken);
+                        // Здесь можно тоже получить expiration refresh token, если требуется
+                        Date refreshExpiry = jwtUtil.getExpirationFromToken(refreshToken);
+                        if (refreshJti != null && refreshExpiry != null) {
+                            tokenBlacklistService.blacklistToken(refreshJti, refreshExpiry);
+                        }
+                    } catch (Exception ex) {
+                        ex.printStackTrace();
+                    }
+                    cookie.setValue(null);
+                    cookie.setPath("/");
+                    cookie.setMaxAge(0);
+                    response.addCookie(cookie);
+                }
+            }
+        }
 
-        // Если у вас реализована серверная логика проверки токенов или хранение токенов,
-        // здесь можно реализовать деактивацию access token и refresh token на стороне сервера.
+        // Обработка access token из заголовка Authorization
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            String accessToken = authHeader.substring(7);
+            try {
+                String accessJti = jwtUtil.getJti(accessToken);
+                Date accessExpiry = jwtUtil.getExpirationFromToken(accessToken);
+                if (accessJti != null && accessExpiry != null) {
+                    tokenBlacklistService.blacklistToken(accessJti, accessExpiry);
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
+        }
 
-        return ResponseEntity.ok("Вы вышли из системы");
+        return ResponseEntity.ok("Вы успешно вышли из системы. Токены деактивированы.");
     }
 }
