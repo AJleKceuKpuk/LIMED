@@ -7,7 +7,7 @@ import java.util.Date;
 
 @Entity
 @Data
-@Table(name = "token_records")
+@Table(name = "tokens")
 public class Token {
 
     @Id
@@ -30,6 +30,10 @@ public class Token {
     @Column(nullable = false)
     private Boolean revoked = false;
 
+    // Время, когда токен был отозван. При создании токена это поле будет null.
+    @Temporal(TemporalType.TIMESTAMP)
+    private Date revokedAt;
+
     // Тип токена: "access" или "refresh"
     @Column(nullable = false)
     private String tokenType;
@@ -44,59 +48,41 @@ public class Token {
         this.expiration = expiration;
         this.tokenType = tokenType;
         this.revoked = false;
+        this.revokedAt = null;
     }
 
-    // Геттеры и сеттеры
-
-    public Long getId() {
-        return id;
-    }
-
-    public String getJti() {
-        return jti;
-    }
-
-    public void setJti(String jti) {
-        this.jti = jti;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
-    }
-
-    public Date getIssuedAt() {
-        return issuedAt;
-    }
-
-    public void setIssuedAt(Date issuedAt) {
-        this.issuedAt = issuedAt;
-    }
-
-    public Date getExpiration() {
-        return expiration;
-    }
-
-    public void setExpiration(Date expiration) {
-        this.expiration = expiration;
-    }
+    // Геттеры и сеттеры можно оставить, с Lombok они генерируются автоматически,
+    // но добавим кастомную логику для установки revoked и revokedAt.
 
     public Boolean getRevoked() {
         return revoked;
     }
 
+    /**
+     * Устанавливает статус отзыва токена.
+     * Если статус переводят в true, устанавливает revokedAt в текущее время.
+     * Если сбрасывают отзыв (при необходимости), revokedAt сбрасывается в null.
+     */
     public void setRevoked(Boolean revoked) {
         this.revoked = revoked;
+        if (revoked) {
+            // Если токен отзывается впервые, устанавливаем время отзыва.
+            if (this.revokedAt == null) {
+                this.revokedAt = new Date();
+            }
+        } else {
+            // При сбросе статуса отзыва можно очищать значение revokedAt.
+            this.revokedAt = null;
+        }
     }
 
-    public String getTokenType() {
-        return tokenType;
+    public Date getRevokedAt() {
+        return revokedAt;
     }
 
-    public void setTokenType(String tokenType) {
-        this.tokenType = tokenType;
+    public void setRevokedAt(Date revokedAt) {
+        this.revokedAt = revokedAt;
     }
+
+    // Остальные геттеры и сеттеры генерируются Lombok (@Data) или реализуются аналогично выше.
 }

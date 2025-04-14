@@ -4,6 +4,8 @@ import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import limed_backend.models.Token;
+import limed_backend.repository.TokenRepository;
 import limed_backend.services.UserDetailsServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -14,8 +16,7 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
-
-//
+import java.util.Date;
 
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
@@ -26,7 +27,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private UserDetailsServiceImpl customUserDetailsService;
 
     @Autowired
-    private TokenBlacklistService tokenBlacklistService;
+    private TokenRepository tokenRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -40,21 +41,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(jwt) && jwtUtil.validateToken(jwt)) {
             // Получаем уникальный идентификатор токена (jti)
             String jti = jwtUtil.getJti(jwt);
-            // Если токен отозван, возвращаем ответ с кодом 403 и завершаем фильтрацию
-            if (jti != null && tokenBlacklistService.isTokenBlacklisted(jti)) {
+
+            // Извлекаем запись токена из базы данных
+            Token tokenRecord = tokenRepository.findByJti(jti);
+
+            // Если записи нет, токен отозван или истёк – отклоняем запрос
+            if (tokenRecord == null
+                    || tokenRecord.getRevoked()
+                    || tokenRecord.getExpiration().before(new Date())) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                response.getWriter().write("Token has been deactivated.");
+                response.getWriter().write("Token is revoked or invalid.");
                 return;
             }
 
-            // Если токен валидный и не отозван, продолжаем обработку
+            // Если токен валидный, продолжаем обработку
             String username = jwtUtil.getUsernameFromToken(jwt);
             UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
 
             UsernamePasswordAuthenticationToken authentication =
                     new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
             authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         filterChain.doFilter(request, response);
@@ -62,7 +68,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     private String getJwtFromRequest(HttpServletRequest request) {
         String bearerToken = request.getHeader("Authorization");
-        if(StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
             return bearerToken.substring(7);
         }
         return null;

@@ -11,7 +11,6 @@ import limed_backend.models.Role;
 import limed_backend.models.User;
 import limed_backend.repository.RoleRepository;
 import limed_backend.repository.UserRepository;
-import limed_backend.jwt.TokenBlacklistService;
 import limed_backend.services.TokenService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -29,10 +28,10 @@ import java.util.Date;
 public class AuthController {
 
     @Autowired
-    private  AuthenticationManager authenticationManager;
+    private AuthenticationManager authenticationManager;
 
     @Autowired
-    private  JwtUtil jwtUtil;
+    private JwtUtil jwtUtil;
 
     @Autowired
     private UserRepository userRepository;
@@ -42,9 +41,6 @@ public class AuthController {
 
     @Autowired
     private RoleRepository roleRepository;
-
-    @Autowired
-    private TokenBlacklistService tokenBlacklistService;
 
     @Autowired
     private TokenService tokenService;
@@ -59,65 +55,35 @@ public class AuthController {
         this.jwtUtil = jwtUtil;
     }
 
-//    @PostMapping("/login")
-//    public TokenResponse login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
-//        // Выполняем аутентификацию по логину и паролю
-//        Authentication authentication = authenticationManager.authenticate(
-//                new UsernamePasswordAuthenticationToken(
-//                        loginRequest.getUsername(), loginRequest.getPassword())
-//        );
-//        // Генерируем токены
-//        String accessToken = jwtUtil.generateAccessToken(loginRequest.getUsername());
-//        String refreshToken = jwtUtil.generateRefreshToken(loginRequest.getUsername());
-//
-//        // Создаем cookie для refresh token
-//        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
-//        refreshTokenCookie.setHttpOnly(true);          // Доступно только сервером
-//        refreshTokenCookie.setSecure(true);              // Передается только по HTTPS
-//        refreshTokenCookie.setPath("/");                 // Cookie доступно для всего приложения
-//        // Можно настроить время жизни cookie (например, в секундах)
-//        refreshTokenCookie.setMaxAge((int) (jwtUtil.getRefreshTokenExpiration() / 1000));
-//
-//        // Добавляем cookie в ответ
-//        response.addCookie(refreshTokenCookie);
-//
-//        // Возвращаем access token в теле ответа
-//        return new TokenResponse(accessToken);
-//    }
-
     @PostMapping("/login")
     public TokenResponse login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
-        // 1. Выполняем аутентификацию по логину и паролю
+        // 1. Аутентификация по логину и паролю
         Authentication authentication = authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(
                         loginRequest.getUsername(), loginRequest.getPassword())
         );
 
-        // 2. Генерируем и сохраняем токены через TokenService
+        // 2. Генерация и сохранение токенов через TokenService
         String accessToken = tokenService.issueAccessToken(loginRequest.getUsername());
         String refreshToken = tokenService.issueRefreshToken(loginRequest.getUsername());
 
-        // 3. Создаем httpOnly cookie для refresh token
+        // 3. Создание httpOnly cookie для refresh token
         Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
         refreshTokenCookie.setHttpOnly(true);   // недоступно для JavaScript
         refreshTokenCookie.setSecure(true);       // передается только по HTTPS
         refreshTokenCookie.setPath("/");          // доступно для всего приложения
 
-        // 4. Вычисляем время жизни cookie исходя из срока истечения refresh token
+        // 4. Вычисление времени жизни куки, исходя из срока действия refresh token
         Date refreshExpiration = jwtUtil.getExpirationFromToken(refreshToken);
         int maxAge = (int) ((refreshExpiration.getTime() - System.currentTimeMillis()) / 1000);
         refreshTokenCookie.setMaxAge(maxAge);
 
-        // 5. Добавляем cookie в ответ
+        // 5. Добавление куки в ответ
         response.addCookie(refreshTokenCookie);
 
-        // 6. Возвращаем access token в теле ответа
+        // 6. Возврат access token в теле ответа
         return new TokenResponse(accessToken);
     }
-
-
-
-
 
     @PostMapping("/registration")
     public String register(@RequestBody RegistrationRequest request) {
@@ -126,13 +92,13 @@ public class AuthController {
             return "Пользователь с таким именем уже существует";
         }
 
-        // Ищем роль "USER" в базе
+        // Поиск роли "USER" в БД
         Role roleUser = roleRepository.findByName("USER");
         if (roleUser == null) {
             return "Роль USER не найдена. Обратитесь к администратору.";
         }
 
-        // Регистрируем пользователя с ролью USER
+        // Регистрация нового пользователя с ролью USER
         User user = User.builder()
                 .username(request.getUsername())
                 .password(passwordEncoder.encode(request.getPassword()))
@@ -144,7 +110,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
-        // Обработка refresh token из cookie
+        // Обработка refresh token из cookies
         Cookie[] cookies = request.getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
@@ -152,14 +118,12 @@ public class AuthController {
                     try {
                         String refreshToken = cookie.getValue();
                         String refreshJti = jwtUtil.getJti(refreshToken);
-                        // Здесь можно тоже получить expiration refresh token, если требуется
-                        Date refreshExpiry = jwtUtil.getExpirationFromToken(refreshToken);
-                        if (refreshJti != null && refreshExpiry != null) {
-                            tokenBlacklistService.blacklistToken(refreshJti, refreshExpiry);
-                        }
+                        // Отзыв refresh token через TokenService
+                        tokenService.revokeToken(refreshJti);
                     } catch (Exception ex) {
                         ex.printStackTrace();
                     }
+                    // Очистка куки
                     cookie.setValue(null);
                     cookie.setPath("/");
                     cookie.setMaxAge(0);
@@ -174,10 +138,7 @@ public class AuthController {
             String accessToken = authHeader.substring(7);
             try {
                 String accessJti = jwtUtil.getJti(accessToken);
-                Date accessExpiry = jwtUtil.getExpirationFromToken(accessToken);
-                if (accessJti != null && accessExpiry != null) {
-                    tokenBlacklistService.blacklistToken(accessJti, accessExpiry);
-                }
+                tokenService.revokeToken(accessJti);
             } catch (Exception ex) {
                 ex.printStackTrace();
             }
