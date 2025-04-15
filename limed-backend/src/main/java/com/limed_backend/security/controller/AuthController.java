@@ -40,14 +40,16 @@ public class AuthController {
     @Autowired
     private TokenService tokenService;
 
-    @GetMapping("/start")
-    public String welcome() {
-        return "Добро пожаловать! Доступно всем.";
-    }
+
 
     public AuthController(AuthenticationManager authenticationManager, JwtCore jwtCore) {
         this.authenticationManager = authenticationManager;
         this.jwtCore = jwtCore;
+    }
+
+    @GetMapping("/start")
+    public String welcome() {
+        return "Добро пожаловать! Доступно всем.";
     }
 
     @PostMapping("/login")

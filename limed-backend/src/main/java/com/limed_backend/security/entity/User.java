@@ -30,9 +30,6 @@ public class User {
     @Getter
     @Setter
     private boolean online;
-    @Setter
-    @Getter
-    private LocalDateTime lastTokenRefresh;
 
     // Связь с сущностью Role
     @ManyToMany(fetch = FetchType.EAGER)
@@ -43,9 +40,5 @@ public class User {
     )
     private Set<Role> roles;
 
-    public void updateTokenRefresh() {
-        this.lastTokenRefresh = LocalDateTime.now();
-        this.online = true;
-    }
 }
 
