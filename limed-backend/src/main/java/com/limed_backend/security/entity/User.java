@@ -27,8 +27,6 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    @Getter
-    @Setter
     private boolean online;
 
     // Связь с сущностью Role
@@ -40,5 +38,8 @@ public class User {
     )
     private Set<Role> roles;
 
+    public void updateTokenRefresh() {
+        this.online = true;
+    }
 }
 

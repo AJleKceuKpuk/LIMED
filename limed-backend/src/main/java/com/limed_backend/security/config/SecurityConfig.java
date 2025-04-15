@@ -1,4 +1,4 @@
-package com.limed_backend.security.component;
+package com.limed_backend.security.config;
 
 import com.limed_backend.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
@@ -46,7 +46,7 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable) //Отключаем стандарный String Security logout
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/start", "/login", "/registration").permitAll()
+                        .requestMatchers("/start", "/login","/ws/**","/user/status","app/**", "/registration").permitAll()
                         .requestMatchers("/game", "/logout").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()

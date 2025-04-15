@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Тест STOMP.js</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        pre { background: #f0f0f0; padding: 10px; }
+    </style>
+    <!-- Подключаем библиотеки через CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js
+"></script>
+</head>
+<body>
+<h1>STOMP.js Test</h1>
+<pre id="log"></pre>
+
+<script>
+    // Функция для логирования в элемент <pre id="log">
+    function log(message) {
+      const logElement = document.getElementById('log');
+      logElement.textContent += message + "\n";
+      console.log(message);
+    }
+
+    log("Скрипт запущен");
+
+    // Создаем WebSocket-соединение через SockJS
+    const socket = new SockJS('http://localhost:8080/ws');
+
+    // Создаем STOMP клиента используя глобальное пространство StompJs
+    const client = new StompJs.Client({
+      webSocketFactory: () => socket,
+      debug: (msg) => log("DEBUG: " + msg),
+      onConnect: (frame) => {
+        log("Подключено: " + JSON.stringify(frame));
+
+        // Подписываемся на канал, куда сервер отправляет сообщения
+        client.subscribe('/topic/user/status', (message) => {
+          log("Получено сообщение: " + message.body);
+        });
+
+        // Отправляем тестовое сообщение для обновления статуса
+        const testMessage = { userId: 1, online: true };
+        client.publish({
+          destination: '/app/user/status',
+          body: JSON.stringify(testMessage)
+        });
+        log("Отправлено сообщение: " + JSON.stringify(testMessage));
+      },
+      onStompError: (frame) => {
+        log("Ошибка STOMP: " + JSON.stringify(frame));
+      }
+    });
+
+    // Активируем клиента
+    client.activate();
+</script>
+</body>
+</html>

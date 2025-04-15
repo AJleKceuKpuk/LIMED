@@ -3,7 +3,7 @@ package com.limed_backend.security.controller;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import com.limed_backend.security.component.JwtCore;
+import com.limed_backend.security.config.JwtCore;
 import com.limed_backend.security.dto.LoginRequest;
 import com.limed_backend.security.dto.RegistrationRequest;
 import com.limed_backend.security.dto.TokenResponse;
@@ -39,8 +39,6 @@ public class AuthController {
     private RoleRepository roleRepository;
     @Autowired
     private TokenService tokenService;
-
-
 
     public AuthController(AuthenticationManager authenticationManager, JwtCore jwtCore) {
         this.authenticationManager = authenticationManager;
@@ -109,7 +107,6 @@ public class AuthController {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(Collections.singleton(roleUser))
                 .online(false)             // Пользователь по умолчанию офлайн
-                .lastTokenRefresh(null)    // Вход в систему не произведён, поэтому времени нет
                 .build();
         userRepository.save(user);
         return "Пользователь зарегистрирован";
