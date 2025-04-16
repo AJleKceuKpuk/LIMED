@@ -106,7 +106,7 @@ public class AuthController {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(Collections.singleton(roleUser))
-                .online(false)             // Пользователь по умолчанию офлайн
+                .status("offline")             // Пользователь по умолчанию офлайн
                 .build();
         userRepository.save(user);
         return "Пользователь зарегистрирован";

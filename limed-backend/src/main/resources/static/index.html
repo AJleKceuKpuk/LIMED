@@ -6,56 +6,123 @@
     <style>
         body { font-family: Arial, sans-serif; margin: 20px; }
         pre { background: #f0f0f0; padding: 10px; }
+        button { margin-right: 10px; margin-bottom: 10px; }
     </style>
     <!-- Подключаем библиотеки через CDN -->
     <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js
-"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@stomp/stompjs@7/bundles/stomp.umd.min.js"></script>
 </head>
 <body>
 <h1>STOMP.js Test</h1>
+
+<!-- Кнопки для тестирования -->
+<button onclick="setOnline()">Обновить статус</button>
+<button onclick="disconnect()">Разорвать соединение</button>
+<button onclick="reconnect()">Повторное подключение</button>
+
 <pre id="log"></pre>
 
 <script>
+
     // Функция для логирования в элемент <pre id="log">
     function log(message) {
-      const logElement = document.getElementById('log');
-      logElement.textContent += message + "\n";
-      console.log(message);
+        const logElement = document.getElementById('log');
+        logElement.textContent += message + "\n";
+        console.log(message);
     }
 
     log("Скрипт запущен");
 
-    // Создаем WebSocket-соединение через SockJS
-    const socket = new SockJS('http://localhost:8080/ws');
+    // Глобальные переменные для сокета и клиента
+    let socket = new SockJS('http://localhost:8080/ws/online?userId=1');
+    let client = new StompJs.Client({
+        webSocketFactory: () => socket,
+        debug: (msg) => log("DEBUG: " + msg),
+        onConnect: (frame) => {
+            log("Подключено: " + JSON.stringify(frame));
 
-    // Создаем STOMP клиента используя глобальное пространство StompJs
-    const client = new StompJs.Client({
-      webSocketFactory: () => socket,
-      debug: (msg) => log("DEBUG: " + msg),
-      onConnect: (frame) => {
-        log("Подключено: " + JSON.stringify(frame));
+            // Подписываемся на канал, куда сервер отправляет обновления статуса
+            client.subscribe('/ws/online/users', (message) => {
+                log("Получено сообщение: " + message.body);
+            });
 
-        // Подписываемся на канал, куда сервер отправляет сообщения
-        client.subscribe('/topic/user/status', (message) => {
-          log("Получено сообщение: " + message.body);
-        });
-
-        // Отправляем тестовое сообщение для обновления статуса
-        const testMessage = { userId: 1, online: true };
-        client.publish({
-          destination: '/app/user/status',
-          body: JSON.stringify(testMessage)
-        });
-        log("Отправлено сообщение: " + JSON.stringify(testMessage));
-      },
-      onStompError: (frame) => {
-        log("Ошибка STOMP: " + JSON.stringify(frame));
-      }
+            // Отправляем тестовое сообщение для обновления статуса на "online"
+            const testMessage = { userId: 1, status: "online" };
+            client.publish({
+                destination: '/ws/online/update',
+                body: JSON.stringify(testMessage)
+            });
+            log("Отправлено сообщение: " + JSON.stringify(testMessage));
+        },
+        onStompError: (frame) => {
+            log("Ошибка STOMP: " + JSON.stringify(frame));
+        }
     });
 
-    // Активируем клиента
+    // Активируем STOMP клиента
     client.activate();
+
+    // Функция для обновления статуса на ONLINE
+    function setOnline() {
+        const updateMessage = { userId: 1, status: "online" };
+        client.publish({
+            destination: '/ws/online/update',
+            body: JSON.stringify(updateMessage)
+        });
+        log("Отправлено сообщение для обновления статуса: " + JSON.stringify(updateMessage));
+    }
+
+    // Функция для разрыва соединения
+    function disconnect() {
+        if (client && client.active) {
+            // Отправляем сообщение, обновляющее статус на offline
+            const offlineMessage = { userId: 1, status: "offline" };
+            client.publish({
+                destination: '/ws/online/update',
+                body: JSON.stringify(offlineMessage)
+            });
+            log("Отправлено сообщение для обновления статуса: " + JSON.stringify(offlineMessage));
+
+            client.deactivate();
+            log("Соединение разорвано");
+        } else {
+            log("Клиент уже неактивен");
+        }
+    }
+
+
+    // Функция для повторного подключения и подписки
+    function reconnect() {
+        // Если клиент всё ещё активен, разорвем соединение перед повторным подключением
+        if (client && client.active) {
+            client.deactivate();
+        }
+        // Создаем новый экземпляр SockJS и STOMP клиента
+        socket = new SockJS('http://localhost:8080/ws/online');
+        client = new StompJs.Client({
+            webSocketFactory: () => socket,
+            debug: (msg) => log("DEBUG: " + msg),
+            onConnect: (frame) => {
+                log("Повторное подключение успешно: " + JSON.stringify(frame));
+
+                client.subscribe('/ws/online/users', (message) => {
+                    log("Получено сообщение: " + message.body);
+                });
+
+                // Отправляем тестовое сообщение для обновления статуса на "online"
+                const testMessage = { userId: 1, status: "online" };
+                client.publish({
+                    destination: '/ws/online/update',
+                    body: JSON.stringify(testMessage)
+                });
+                log("Отправлено сообщение: " + JSON.stringify(testMessage));
+            },
+            onStompError: (frame) => {
+                log("Ошибка STOMP: " + JSON.stringify(frame));
+            }
+        });
+        client.activate();
+    }
 </script>
 </body>
 </html>

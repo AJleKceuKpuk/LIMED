@@ -7,9 +7,9 @@ import lombok.*;
 import java.time.LocalDateTime;
 import java.util.Set;
 
+@Data
 @Entity
 @Table(name = "users")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
@@ -27,7 +27,11 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    private boolean online;
+    @Column(name = "status")
+    private String status;
+
+    @Column(name = "last_activity")
+    private LocalDateTime lastActivity;
 
     // Связь с сущностью Role
     @ManyToMany(fetch = FetchType.EAGER)
@@ -39,7 +43,7 @@ public class User {
     private Set<Role> roles;
 
     public void updateTokenRefresh() {
-        this.online = true;
+        this.status = "online";
     }
 }
 
