@@ -1,4 +1,4 @@
-package com.limed_backend.security.service;
+package com.limed_backend.security.wesocket;
 
 import org.springframework.http.server.ServerHttpRequest;
 import org.springframework.http.server.ServerHttpResponse;

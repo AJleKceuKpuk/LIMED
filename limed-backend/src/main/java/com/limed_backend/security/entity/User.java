@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import lombok.*;
 
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Set;
 
@@ -32,6 +33,9 @@ public class User {
 
     @Column(name = "last_activity")
     private LocalDateTime lastActivity;
+
+    @Column(name = "registration")
+    private LocalDate dateRegistration;
 
     // Связь с сущностью Role
     @ManyToMany(fetch = FetchType.EAGER)

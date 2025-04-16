@@ -1,6 +1,6 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.config.JwtCore;
+import com.limed_backend.security.jwt.JwtCore;
 import com.limed_backend.security.entity.Token;
 import com.limed_backend.security.repository.TokenRepository;
 import org.springframework.beans.factory.annotation.Autowired;

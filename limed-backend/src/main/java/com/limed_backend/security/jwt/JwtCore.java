@@ -1,4 +1,4 @@
-package com.limed_backend.security.config;
+package com.limed_backend.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;

@@ -1,6 +1,7 @@
-package com.limed_backend.security.service;
+package com.limed_backend.security.wesocket;
 
 import com.limed_backend.security.dto.UserStatusRequest;
+import com.limed_backend.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.messaging.simp.user.SimpUserRegistry;

@@ -1,5 +1,6 @@
 package com.limed_backend.security.config;
 
+import com.limed_backend.security.jwt.JwtAuthenticationFilter;
 import com.limed_backend.security.service.UserDetailsServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -14,7 +15,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
-
 
 @Configuration
 @EnableWebSecurity
@@ -33,12 +33,12 @@ public class SecurityConfig {
         return new BCryptPasswordEncoder();
     }
 
-    // Этот бин позволяет получить AuthenticationManager
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
+    //Цепочка основных фильтров для доступа по ролям
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http

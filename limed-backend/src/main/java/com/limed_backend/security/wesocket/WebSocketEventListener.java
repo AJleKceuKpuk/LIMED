@@ -1,7 +1,7 @@
-package com.limed_backend.security.service;
+package com.limed_backend.security.wesocket;
 
-import com.limed_backend.security.service.UserConnectionService;
 import com.limed_backend.security.service.UserService;
+import com.limed_backend.security.wesocket.UserConnectionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;

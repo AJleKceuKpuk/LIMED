@@ -1,4 +1,4 @@
-package com.limed_backend.security.config;
+package com.limed_backend.security.jwt;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

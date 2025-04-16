@@ -1,8 +1,6 @@
-package com.limed_backend.security.config;
+package com.limed_backend.security.wesocket;
 
 
-import com.limed_backend.security.service.CustomHandshakeHandler;
-import com.limed_backend.security.service.HttpHandshakeInterceptor;
 import com.limed_backend.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
