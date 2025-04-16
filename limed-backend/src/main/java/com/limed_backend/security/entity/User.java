@@ -4,7 +4,6 @@ import jakarta.persistence.*;
 import lombok.*;
 
 
-import java.time.LocalDateTime;
 import java.util.Set;
 
 @Entity
@@ -27,7 +26,7 @@ public class User {
     @Column(nullable = false)
     private String password;
 
-    private boolean online;
+    private String status;
 
     // Связь с сущностью Role
     @ManyToMany(fetch = FetchType.EAGER)
@@ -38,8 +37,8 @@ public class User {
     )
     private Set<Role> roles;
 
-    public void updateTokenRefresh() {
-        this.online = true;
+    public void updateStatus() {
+        this.status = "online";
     }
 }
 
