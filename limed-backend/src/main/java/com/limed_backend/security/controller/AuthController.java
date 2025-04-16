@@ -65,7 +65,7 @@ public class AuthController {
         Optional<User> optionalUser = userRepository.findByUsername(loginRequest.getUsername());
         if (optionalUser.isPresent()) {
             User user = optionalUser.get();
-            user.updateStatus(); // Обновляет lastTokenRefresh и устанавливает online = true
+            user.updateTokenRefresh(); // Обновляет lastTokenRefresh и устанавливает online = true
             userRepository.save(user);
         }
 
@@ -106,7 +106,7 @@ public class AuthController {
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(Collections.singleton(roleUser))
-                .status("offline")             // Пользователь по умолчанию офлайн
+                .online(false)             // Пользователь по умолчанию офлайн
                 .build();
         userRepository.save(user);
         return "Пользователь зарегистрирован";

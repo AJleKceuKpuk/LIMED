@@ -42,7 +42,7 @@
         });
 
         // Отправляем тестовое сообщение для обновления статуса
-        const testMessage = { userId: 1, status: "online" };
+        const testMessage = { userId: 1, online: true };
         client.publish({
           destination: '/app/user/status',
           body: JSON.stringify(testMessage)

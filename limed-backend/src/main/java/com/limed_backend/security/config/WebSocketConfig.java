@@ -43,7 +43,7 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
         if (userIdStr != null) {
             try {
                 Long userId = Long.parseLong(userIdStr);
-                userService.updateStatus(userId, "offline");
+                userService.updateOnlineStatus(userId, false);
                 System.out.println("User " + userId + " disconnect. Status Offline.");
             } catch (NumberFormatException e) {
                 System.err.println("Error to  userId on int: " + userIdStr);

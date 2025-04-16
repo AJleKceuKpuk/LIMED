@@ -27,10 +27,18 @@ public class WebSocketController {
         // Обновляем статус в базе
 
         System.out.println("Update DB online");
-        userService.updateStatus(message.getUserId(), message.getStatus());
+        userService.updateOnlineStatus(message.getUserId(), message.isOnline());
 
         return message;
     }
+
+//    @MessageMapping("/user/status")
+//    @SendTo("/topic/user/status")
+//    public UserStatus updateUserStatus(UserStatus message) {
+//        System.out.println("Получено сообщение: " + message);
+//        userService.updateOnlineStatus(message.getUserId(), message.isOnline());
+//        return message;
+//    }
 
 
 }

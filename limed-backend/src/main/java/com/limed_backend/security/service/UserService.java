@@ -11,12 +11,11 @@ public class UserService {
     @Autowired
     private UserRepository userRepository;
 
-
-    public void updateStatus(Long userId, String Status) {
+    public void updateOnlineStatus(Long userId, boolean onlineStatus) {
         System.out.println("updateOnlineStatus");
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("User fot found, id: " + userId));
-        user.setStatus(Status);
+        user.setOnline(onlineStatus);
         userRepository.save(user);
     }
 }
