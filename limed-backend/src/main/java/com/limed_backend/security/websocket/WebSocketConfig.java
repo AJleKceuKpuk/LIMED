@@ -1,4 +1,4 @@
-package com.limed_backend.security.wesocket;
+package com.limed_backend.security.websocket;
 
 
 import com.limed_backend.security.service.UserService;
@@ -18,9 +18,8 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
 
     @Override
     public void configureMessageBroker(MessageBrokerRegistry registry) {
-        // Включаем простой брокер для каналов сообщений (для рассылки обновлений клиентам)
+
         registry.enableSimpleBroker("/ws/online/users");
-        // Все сообщения, отправляемые клиентом, должны начинаться с префикса /app
         registry.setApplicationDestinationPrefixes("/ws/online");
     }
 
@@ -32,6 +31,4 @@ public class WebSocketConfig implements WebSocketMessageBrokerConfigurer {
                 .setHandshakeHandler(new CustomHandshakeHandler())  // добавляем кастомный HandshakeHandler
                 .withSockJS();
     }
-
-
 }

@@ -24,7 +24,7 @@
 
 <script>
     // Задаем userId для теста
-    const userId = 1;
+    const userId = 2;
 
     // Функция для логирования в элемент <pre id="log">
     function log(message) {
@@ -34,7 +34,7 @@
     }
     log("Скрипт запущен");
 
-    // Устанавливаем соединение с SockJS по адресу /ws/online?userId=1
+    // Устанавливаем соединение с SockJS по адресу /ws/online?userId=2
     let socket = new SockJS('http://localhost:8080/ws/online?userId=' + userId);
     let client = new StompJs.Client({
         webSocketFactory: () => socket,

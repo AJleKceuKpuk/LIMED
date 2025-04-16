@@ -11,6 +11,7 @@ import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -152,12 +153,14 @@ public class AuthService {
             }
         }
     }
+
     private void clearCookie(Cookie cookie, HttpServletResponse response) {
         cookie.setValue(null);
         cookie.setPath("/");
         cookie.setMaxAge(0);
         response.addCookie(cookie);
     }
+
     private void revokeAccessTokenFromHeader(HttpServletRequest request) {
         String authHeader = request.getHeader("Authorization");
         if (authHeader != null && authHeader.startsWith("Bearer ")) {

@@ -1,10 +1,11 @@
-package com.limed_backend.security.wesocket;
+package com.limed_backend.security.websocket;
 
 import com.limed_backend.security.dto.UserStatusRequest;
 import com.limed_backend.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 
 @Controller
@@ -16,17 +17,18 @@ public class WebSocketController {
     @Autowired
     private UserConnectionService connectionService;
 
+    @Autowired
+    private SimpMessagingTemplate simpMessagingTemplate;
 
     @MessageMapping("/update")
-    @SendTo("/ws/online/users")
-    public UserStatusRequest updateUserStatus(UserStatusRequest message) {
-
-        // Обновляем время активности пользователя
+    public void updateUserStatus(UserStatusRequest message) {
+        // Обновляем время активности и статус в базе
         connectionService.updateLastUserActivity(message.getUserId());
-        // Обновляем статус в базе
         userService.updateOnlineStatus(message.getUserId(), message.getStatus());
 
-        return message;
+        // Отправляем сообщение только конкретному пользователю
+        String destination = "/ws/online/users/" + message.getUserId();
+        simpMessagingTemplate.convertAndSend(destination, message);
     }
 
 }

@@ -28,14 +28,10 @@ public class Token {
     @Temporal(TemporalType.TIMESTAMP)
     private Date expiration;
 
-    // Флаг, отражающий, отозван ли токен
-    @Getter
     @Column(nullable = false)
     private Boolean revoked = false;
 
     // Время, когда токен был отозван. При создании токена это поле будет null.
-    @Setter
-    @Getter
     @Temporal(TemporalType.TIMESTAMP)
     private Date revokedAt;
 
