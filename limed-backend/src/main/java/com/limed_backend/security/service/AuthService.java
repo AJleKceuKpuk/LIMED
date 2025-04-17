@@ -73,7 +73,6 @@ public class AuthService {
                 .password(passwordEncoder.encode(request.getPassword()))
                 .roles(Collections.singleton(userRole))
                 .status("offline")
-                .lastActivity(null)
                 .dateRegistration(LocalDate.now())
                 .build();
         userRepository.save(user);
