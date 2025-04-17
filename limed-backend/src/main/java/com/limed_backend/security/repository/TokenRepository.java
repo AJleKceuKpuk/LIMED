@@ -21,4 +21,6 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
 
     // Метод для удаления старых токенов
     int deleteAllByExpirationBefore(Date now);
+
+    List<Token> findByUsernameAndRevokedFalse(String username);
 }

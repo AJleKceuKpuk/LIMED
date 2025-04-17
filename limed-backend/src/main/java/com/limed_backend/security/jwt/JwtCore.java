@@ -36,10 +36,10 @@ public class JwtCore {
         Date expiryDate = new Date(now.getTime() + accessTokenExpiration);
         return Jwts.builder()
                 .setSubject(username)                                                   //добавляем имя в access token
-                .setId(UUID.randomUUID().toString())                                    //создаем уникальный индификатор
+                .setId(UUID.randomUUID().toString())                                    //создаем уникальный индификатор jti
                 .setIssuedAt(now)                                                       //добавляем начало действия
                 .setExpiration(expiryDate)                                              //добавляем конец действия
-                .claim("tokenType", "access")                                     //добавляем тип токена
+                .claim("tokenType", "access")                              //добавляем тип токена
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)                    //подписываем с помощью ключа подписи
                 .compact();
     }
@@ -53,7 +53,7 @@ public class JwtCore {
                 .setId(UUID.randomUUID().toString())                                //создаем уникальный индификатор jti
                 .setIssuedAt(now)                                                   //добавляем начало действия
                 .setExpiration(expiryDate)                                          //добавляем конец действия
-                .claim("tokenType", "refresh")                                //добавляем тип токена
+                .claim("tokenType", "refresh")                         //добавляем тип токена
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)                //подписываем с помощью ключа подписи
                 .compact();
     }

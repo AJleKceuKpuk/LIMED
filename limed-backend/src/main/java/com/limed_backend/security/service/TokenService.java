@@ -10,12 +10,15 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Date;
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
 public class TokenService {
 
+    @Autowired
     private JwtCore jwtCore;
+    @Autowired
     private TokenRepository tokenRepository;
 
     //запись Access токена в базу данных
@@ -47,6 +50,14 @@ public class TokenService {
             token.setRevoked(true); // При установке true, метод setRevoked() сам выставит revokedAt
             tokenRepository.save(token);
         }
+    }
+
+    public void revokeAllTokens(String username) {
+        List<Token> tokens = tokenRepository.findByUsernameAndRevokedFalse(username);
+        for (Token token : tokens) {
+            token.setRevoked(true);
+        }
+        tokenRepository.saveAll(tokens);
     }
 
     //ежедневная проверка токенов для удаления старых, которые истекли (в 8:00)

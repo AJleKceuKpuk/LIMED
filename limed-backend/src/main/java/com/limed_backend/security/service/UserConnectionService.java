@@ -1,4 +1,4 @@
-package com.limed_backend.security.websocket;
+package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.UserStatusRequest;
 import com.limed_backend.security.service.UserService;
@@ -37,29 +37,22 @@ public class UserConnectionService {
 
 
     //Запускается раз в 30 секунд
-    @Scheduled(fixedDelay = 10000)
+    @Scheduled(fixedDelay = 30000)
     public void activityCheck() {
-        long currentTime = System.currentTimeMillis(); //получаем текущее время
-        long inactivityThreshold = 20000;
+        long currentTime = System.currentTimeMillis();
+        long inactivityThreshold = 60000;
 
         userLastActivity.forEach((userId, lastActivityMillis) -> { //проходим по всей Map и смотрим юзера на последнюю активность
             System.out.println("Checking user id: " + userId);
             if (currentTime - lastActivityMillis > inactivityThreshold) {
-                // Обновляем статус пользователя на "away"
                 userService.updateOnlineStatus(userId, "away");
-
-                // Преобразуем сохранённое время последней активности в LocalDateTime
                 LocalDateTime recordedLastActivity = java.time.Instant
                         .ofEpochMilli(lastActivityMillis)
                         .atZone(java.time.ZoneId.systemDefault())
                         .toLocalDateTime();
-
-                // Записываем в базу дату и время последнего реального действия пользователя,
-                // вместо того чтобы записывать текущее время
                 userService.updateLastActivity(userId, recordedLastActivity);
-
                 UserStatusRequest statusUpdate = new UserStatusRequest(userId, "away");
-                messagingTemplate.convertAndSend("/ws/online/users/" + userId , statusUpdate);
+                messagingTemplate.convertAndSend("/ws/online/users/" + userId , statusUpdate); //возврат ответа клиенту
                 System.out.println("User " + userId + " inactive for "
                         + (currentTime - lastActivityMillis) + " ms. Status set to AWAY.");
             }

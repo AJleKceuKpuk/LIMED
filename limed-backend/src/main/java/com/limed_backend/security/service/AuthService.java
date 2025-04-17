@@ -112,7 +112,7 @@ public class AuthService {
         });
     }
 
-    private void addRefreshTokenCookie(String refreshToken, HttpServletResponse response) {
+    public void addRefreshTokenCookie(String refreshToken, HttpServletResponse response) {
         Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setSecure(true);
