@@ -29,16 +29,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private UserDetailsServiceImpl customUserDetailsService;
     @Autowired
     private TokenRepository tokenRepository;
-
-
+;
     @Override
     protected void doFilterInternal(HttpServletRequest request,
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
-        String jwt = getJwtFromRequest(request);
+        String jwt = jwtCore.getJwtFromHeader(request);
 
-        if (StringUtils.hasText(jwt) && jwtCore.validateToken(jwt)) {
+        if (StringUtils.hasText(jwt) && jwtCore.validateToken(jwt, null)) {
+
             String jti = jwtCore.getJti(jwt);
             Token tokenRecord = tokenRepository.findByJti(jti);
             if (tokenRecord == null || tokenRecord.getRevoked() || tokenRecord.getExpiration().before(new Date())) {
@@ -56,14 +56,5 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             SecurityContextHolder.getContext().setAuthentication(authentication);
         }
         filterChain.doFilter(request, response);
-    }
-
-    // Извлечение Jwt из запроса
-    public String getJwtFromRequest(HttpServletRequest request) {
-        String bearerToken = request.getHeader("Authorization");
-        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
-            return bearerToken.substring(7);
-        }
-        return null;
     }
 }

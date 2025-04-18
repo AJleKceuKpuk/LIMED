@@ -1,4 +1,3 @@
-// Role.java
 package com.limed_backend.security.entity;
 
 import jakarta.persistence.*;

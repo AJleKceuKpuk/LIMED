@@ -3,6 +3,10 @@ package com.limed_backend.security.service;
 import com.limed_backend.security.jwt.JwtCore;
 import com.limed_backend.security.entity.Token;
 import com.limed_backend.security.repository.TokenRepository;
+import io.jsonwebtoken.Claims;
+import io.jsonwebtoken.JwtException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -32,7 +36,7 @@ public class TokenService {
         return token;
     }
 
-    //запись Refresh токена
+    //запись Refresh токена в базу данных
     public String issueRefreshToken(String username) {
         String token = jwtCore.generateRefreshToken(username);
         String jti = jwtCore.getJti(token);
@@ -43,7 +47,7 @@ public class TokenService {
         return token;
     }
 
-    //Отзыв токена
+    //Отзыв токена (revoke из БД)
     public void revokeToken(String jti) {
         Token token = tokenRepository.findByJti(jti);
         if (token != null && !token.getRevoked()) {
@@ -52,6 +56,7 @@ public class TokenService {
         }
     }
 
+    //Отзыв все токенов пользователя и БД
     public void revokeAllTokens(String username) {
         List<Token> tokens = tokenRepository.findByUsernameAndRevokedFalse(username);
         for (Token token : tokens) {
@@ -60,11 +65,65 @@ public class TokenService {
         tokenRepository.saveAll(tokens);
     }
 
+
+    /* ==================================================================== */
+    // Логика обновления Access токена
+    public String refreshAccessToken(HttpServletRequest request) {
+        String refreshToken = extractRefreshTokenFromCookies(request);
+        jwtCore.validateToken(refreshToken, "refresh");
+
+        String accessToken = jwtCore.getJwtFromHeader(request);
+        Claims accessClaims = jwtCore.getClaims(accessToken);
+
+        String usernameFromAccess = accessClaims.getSubject();
+
+        validateAccessTokenRecord(accessClaims);
+        validateTokenOwnership(refreshToken, accessClaims);
+
+        revokeToken(accessClaims.getId());
+        return issueAccessToken(usernameFromAccess);
+    }
+
+    // Извлекает Refresh Токен из Куки
+    private String extractRefreshTokenFromCookies(HttpServletRequest request) {
+        if (request.getCookies() != null) {
+            for (Cookie cookie : request.getCookies()) {
+                if ("refreshToken".equals(cookie.getName())) {
+                    return cookie.getValue();
+                }
+            }
+        }
+        return null;
+    }
+
+
+    // Проверяет, что access токен существует в базе и не отозван
+    private void validateAccessTokenRecord(Claims accessClaims) {
+        String accessJti = accessClaims.getId();
+        Token accessTokenRecord = tokenRepository.findByJti(accessJti);
+        if (accessTokenRecord == null || accessTokenRecord.getRevoked()) {
+            throw new JwtException("Access токен отозван или не найден");
+        }
+    }
+
+    // Сверяет, что refresh и access токены принадлежат одному пользователю
+    private void validateTokenOwnership(String refreshToken, Claims accessClaims) {
+        String usernameFromAccess = accessClaims.getSubject();
+        String usernameFromRefresh = jwtCore.getUsernameFromToken(refreshToken);
+        if (!usernameFromAccess.equals(usernameFromRefresh)) {
+            throw new JwtException("Токены принадлежат разным пользователям");
+        }
+    }
+
+    /* ==================================================================== */
+
+
     //ежедневная проверка токенов для удаления старых, которые истекли (в 8:00)
     @Scheduled(cron = "0 0 8 * * ?")
     @Transactional
     public void cleanupExpiredTokens() {
         Date now = new Date();
-        int deletedCount = tokenRepository.deleteAllByExpirationBefore(now);
+        tokenRepository.deleteAllByExpirationBefore(now);
     }
+
 }

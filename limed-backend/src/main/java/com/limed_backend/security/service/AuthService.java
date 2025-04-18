@@ -3,7 +3,6 @@ package com.limed_backend.security.service;
 import com.limed_backend.security.dto.LoginRequest;
 import com.limed_backend.security.dto.RegistrationRequest;
 import com.limed_backend.security.dto.TokenResponse;
-import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.jwt.JwtCore;
 import com.limed_backend.security.repository.RoleRepository;
@@ -11,14 +10,12 @@ import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.Cookie;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -34,67 +31,46 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final TokenService tokenService;
+    private final UserService userService;
 
     /* ==================================================================== */
     // Логика /registration
 
     public String registration(RegistrationRequest request) {
-        if (isUsernameTaken(request.getUsername())) {
-            return "Пользователь с таким именем уже существует";
-        }
-        if (isEmailTaken(request.getEmail())) {
-            return "Пользователь с таким Email уже существует";
-        }
-        Role roleUser = getUserRole();
-        if (roleUser == null) {
-            return "Роль USER не найдена. Обратитесь к администратору.";
-        }
-
-        createAndSaveUser(request, roleUser);
+        userService.validateUsername(request.getUsername());
+        userService.validateEmailAvailability(request.getEmail());
+        createAndSaveUser(request);
         return "Пользователь зарегистрирован";
     }
 
-    private boolean isUsernameTaken(String username) {
-        return userRepository.findByUsername(username).isPresent();
-    }
-
-    private boolean isEmailTaken(String email) {
-        return userRepository.findByEmail(email).isPresent();
-    }
-
-    private Role getUserRole() {
-        return roleRepository.findByName("USER");
-    }
-
-    private void createAndSaveUser(RegistrationRequest request, Role userRole) {
+    private void createAndSaveUser(RegistrationRequest request) {
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .roles(Collections.singleton(userRole))
+                .roles(Collections.singleton(roleRepository.findByName("USER")))
                 .status("offline")
                 .dateRegistration(LocalDate.now())
                 .build();
         userRepository.save(user);
     }
+
     /* ==================================================================== */
     // Логика /login
 
     public TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) {
-        // 1. Аутентификация
-        authenticateUser(loginRequest);
-
-        // 2. Генерация токенов
+        try {
+            authenticateUser(loginRequest);
+        } catch (Exception ex) {
+            System.err.println("Error: " + ex.getMessage());
+            throw ex;
+        }
         String accessToken = tokenService.issueAccessToken(loginRequest.getUsername());
         String refreshToken = tokenService.issueRefreshToken(loginRequest.getUsername());
 
-        // 3. Обновление данных пользователя
         updateUserTokenRefresh(loginRequest.getUsername());
-
-        // 4. Добавление refresh token в куки
         addRefreshTokenCookie(refreshToken, response);
 
-        // 5. Возврат access token в теле ответа
         return new TokenResponse(accessToken);
     }
 
@@ -127,13 +103,14 @@ public class AuthService {
 
     /* ==================================================================== */
     // Логика /logout
-
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
         revokeRefreshTokenFromCookies(request, response);
-        revokeAccessTokenFromHeader(request);
+        String accessToken = jwtCore.getJwtFromHeader(request);
+        tokenService.revokeToken(jwtCore.getJti(accessToken));
         return ResponseEntity.ok("Вы успешно вышли из системы. Токены деактивированы.");
     }
 
+    // Отзыв Refresh Токена и очистка куки
     private void revokeRefreshTokenFromCookies(HttpServletRequest request, HttpServletResponse response) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
@@ -153,6 +130,7 @@ public class AuthService {
         }
     }
 
+    //под-метод для удаления куки
     private void clearCookie(Cookie cookie, HttpServletResponse response) {
         cookie.setValue(null);
         cookie.setPath("/");
@@ -160,17 +138,5 @@ public class AuthService {
         response.addCookie(cookie);
     }
 
-    private void revokeAccessTokenFromHeader(HttpServletRequest request) {
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader != null && authHeader.startsWith("Bearer ")) {
-            String accessToken = authHeader.substring(7);
-            try {
-                String accessJti = jwtCore.getJti(accessToken);
-                tokenService.revokeToken(accessJti);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }
-    }
 }
 

@@ -4,24 +4,16 @@ import com.limed_backend.security.dto.TokenResponse;
 import com.limed_backend.security.dto.UpdateEmailRequest;
 import com.limed_backend.security.dto.UpdatePasswordRequest;
 import com.limed_backend.security.dto.UpdateUsernameRequest;
-import com.limed_backend.security.entity.User;
-import com.limed_backend.security.jwt.JwtCore;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AuthService;
 import com.limed_backend.security.service.TokenService;
 import com.limed_backend.security.service.UserService;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Optional;
 
 @RestController
 @RequestMapping("/user")
@@ -48,25 +40,21 @@ public class UserController {
     public ResponseEntity<TokenResponse> updateUsername(@RequestBody UpdateUsernameRequest request,
                                                         Authentication authentication,
                                                         HttpServletResponse response) {
-        String currentUsername = authentication.getName();
-        TokenResponse tokenResponse = userService.updateUsername(currentUsername, request, response);
+        TokenResponse tokenResponse = userService.updateUsername(authentication.getName(), request, response);
         return ResponseEntity.ok(tokenResponse);
     }
 
     @PutMapping("/update-email")
     public ResponseEntity<String> updateEmail(@RequestBody UpdateEmailRequest request,
                                               Authentication authentication) {
-        String currentUsername = authentication.getName();
-
-        String result = userService.updateEmail(currentUsername, request);
+        String result = userService.updateEmail(authentication.getName(), request);
         return ResponseEntity.ok(result);
     }
 
     @PutMapping("/update-password")
     public ResponseEntity<String> updatePassword(@RequestBody UpdatePasswordRequest request,
                                                  Authentication authentication) {
-        String currentUsername = authentication.getName();
-        String resultMessage = userService.updatePassword(currentUsername, request);
+        String resultMessage = userService.updatePassword(authentication.getName(), request);
         return ResponseEntity.ok(resultMessage);
     }
 

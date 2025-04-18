@@ -2,9 +2,12 @@ package com.limed_backend.security.jwt;
 
 import io.jsonwebtoken.*;
 import io.jsonwebtoken.security.Keys;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.Data;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
+
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
@@ -58,23 +61,42 @@ public class JwtCore {
                 .compact();
     }
 
-    // Извлечение claims из токена через общий метод
-    private Claims getClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getSigningKey())
-                .build()
-                .parseClaimsJws(token)
-                .getBody();
+    //Получение Jwt токен из запроса Header
+    public String getJwtFromHeader(HttpServletRequest request) {
+        String bearerToken = request.getHeader("Authorization");
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith("Bearer ")) {
+            return bearerToken.substring(7);
+        }
+        return null;
     }
 
+    // Извлечение claims из токена
+    public Claims getClaims(String token) {
+        try {
+            return Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token)
+                    .getBody();
+        } catch (ExpiredJwtException ex) {
+            // Если токен истёк, но подпись корректна
+            return ex.getClaims();
+        } catch (JwtException | IllegalArgumentException ex) {
+            throw new JwtException("Неверный токен");
+        }
+    }
+
+    // Получение Jti из Claim
     public String getJti(String token) {
         return getClaims(token).getId();
     }
 
+    // Получение времени окончания токена
     public Date getExpirationFromToken(String token) {
         return getClaims(token).getExpiration();
     }
 
+    // Получение имени пользователя
     public String getUsernameFromToken(String token) {
         return getClaims(token).getSubject();
     }
@@ -84,14 +106,25 @@ public class JwtCore {
         return getClaims(token).get("tokenType", String.class);
     }
 
-    public boolean validateToken(String token) {
-        try {
-            // Если токен успешно распарсен – он считается валидным с точки зрения подписи и срока действия.
-            getClaims(token);
-            return true;
-        } catch (JwtException | IllegalArgumentException ex) {
-            // Здесь можно реализовать логирование ошибки для подробного анализа.
-            return false;
+
+    // проверка токена на валидность и соответствия типу
+    public boolean validateToken(String token, String typeToken) {
+        if (token == null || token.trim().isEmpty()) {
+            throw new JwtException((typeToken != null ? typeToken : "Token") + " not found");
         }
+        if (typeToken != null && !typeToken.trim().isEmpty()) {
+            String tokenType = getTokenTypeFromToken(token);
+            if (!typeToken.equals(tokenType)) {
+                throw new JwtException("Provided token does not have the expected type: expected "
+                        + typeToken + " but found " + tokenType);
+            }
+        }
+        try {
+            Claims claims = getClaims(token);
+        } catch (Exception ex) {
+            throw new JwtException("Invalid or expired " + (typeToken != null ? typeToken : "token")
+                    + ": " + ex.getMessage(), ex);
+        }
+        return true;
     }
 }

@@ -46,27 +46,44 @@ public class UserService {
         userRepository.save(user);
     }
 
+    // Поиск пользователя
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+    }
+
+    // Проверка Имени
+    public void validateUsername(String newUsername) {
+        Optional<User> userExists = userRepository.findByUsername(newUsername);
+        if (userExists.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Логин уже используется");
+        }
+    }
+
+    // Проверка Email
+    public void validateEmailAvailability(String newEmail) {
+        Optional<User> emailExists = userRepository.findByEmail(newEmail);
+        if (emailExists.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже используется");
+        }
+    }
+
+    // Проверка старого пароля
+    public void validateOldPassword(User user, String oldPassword) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неверный старый пароль");
+        }
     }
 
     /* ==================================================================== */
     // Логика update username
     public TokenResponse updateUsername(String currentUsername, UpdateUsernameRequest request, HttpServletResponse response) {
         User user = findUserByUsername(currentUsername);
-        validateNewUsername(request.getNewUsername());
+        validateUsername(request.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
         user.setUsername(request.getNewUsername());
         userRepository.save(user);
         return generateAndSetTokens(user, response);
-    }
-
-    private void validateNewUsername(String newUsername) {
-        Optional<User> userExists = userRepository.findByUsername(newUsername);
-        if (userExists.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Логин уже используется");
-        }
     }
 
     private TokenResponse generateAndSetTokens(User user, HttpServletResponse response) {
@@ -81,17 +98,10 @@ public class UserService {
 
     public String updateEmail(String currentUsername, UpdateEmailRequest request) {
         User user = findUserByUsername(currentUsername);
-        validateNewEmailAvailability(request.getNewEmail());
+        validateEmailAvailability(request.getNewEmail());
         user.setEmail(request.getNewEmail());
         userRepository.save(user);
         return "Email успешно обновлён";
-    }
-
-    private void validateNewEmailAvailability(String newEmail) {
-        Optional<User> emailExists = userRepository.findByEmail(newEmail);
-        if (emailExists.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже используется");
-        }
     }
 
     /* ==================================================================== */
@@ -102,12 +112,6 @@ public class UserService {
         validateOldPassword(user, request.getOldPassword());
         changePassword(user, request.getNewPassword());
         return "Пароль успешно обновлён";
-    }
-
-    private void validateOldPassword(User user, String oldPassword) {
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неверный старый пароль");
-        }
     }
 
     private void changePassword(User user, String newPassword) {

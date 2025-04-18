@@ -2,8 +2,6 @@ package com.limed_backend.security.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
-import lombok.Getter;
-import lombok.Setter;
 
 import java.util.Date;
 
@@ -29,18 +27,15 @@ public class Token {
     private Date expiration;
 
     @Column(nullable = false)
-    private Boolean revoked = false;
+    private Boolean revoked;
 
-    // Время, когда токен был отозван. При создании токена это поле будет null.
+    // Время, когда токен был отозван
     @Temporal(TemporalType.TIMESTAMP)
     private Date revokedAt;
 
     // Тип токена: "access" или "refresh"
     @Column(nullable = false)
     private String tokenType;
-
-    public Token() {
-    }
 
     public Token(String jti, String username, Date issuedAt, Date expiration, String tokenType) {
         this.jti = jti;
@@ -51,7 +46,6 @@ public class Token {
         this.revoked = false;
         this.revokedAt = null;
     }
-
 
     public void setRevoked(Boolean revoked) {
         this.revoked = revoked;
