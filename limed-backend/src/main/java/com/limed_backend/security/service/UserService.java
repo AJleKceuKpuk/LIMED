@@ -1,10 +1,8 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.TokenResponse;
-import com.limed_backend.security.dto.UpdateEmailRequest;
-import com.limed_backend.security.dto.UpdatePasswordRequest;
-import com.limed_backend.security.dto.UpdateUsernameRequest;
+import com.limed_backend.security.dto.*;
 import com.limed_backend.security.entity.User;
+import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,9 +24,10 @@ public class UserService {
     @Autowired
     private TokenService tokenService;
 
+    @Autowired UserMapper userMapper;
+
     private final PasswordEncoder passwordEncoder;
-    @Autowired
-    private AuthService authService;
+    private final AuthService authService;
 
     //обновление статуса пользователя в БД
     public void updateOnlineStatus(Long userId, String status) {
@@ -52,34 +51,11 @@ public class UserService {
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
     }
 
-    // Проверка Имени
-    public void validateUsername(String newUsername) {
-        Optional<User> userExists = userRepository.findByUsername(newUsername);
-        if (userExists.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Логин уже используется");
-        }
-    }
-
-    // Проверка Email
-    public void validateEmailAvailability(String newEmail) {
-        Optional<User> emailExists = userRepository.findByEmail(newEmail);
-        if (emailExists.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже используется");
-        }
-    }
-
-    // Проверка старого пароля
-    public void validateOldPassword(User user, String oldPassword) {
-        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неверный старый пароль");
-        }
-    }
-
     /* ==================================================================== */
     // Логика update username
     public TokenResponse updateUsername(String currentUsername, UpdateUsernameRequest request, HttpServletResponse response) {
         User user = findUserByUsername(currentUsername);
-        validateUsername(request.getNewUsername());
+        authService.validateUsername(request.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
         user.setUsername(request.getNewUsername());
         userRepository.save(user);
@@ -98,7 +74,7 @@ public class UserService {
 
     public String updateEmail(String currentUsername, UpdateEmailRequest request) {
         User user = findUserByUsername(currentUsername);
-        validateEmailAvailability(request.getNewEmail());
+        authService.validateEmailAvailability(request.getNewEmail());
         user.setEmail(request.getNewEmail());
         userRepository.save(user);
         return "Email успешно обновлён";
@@ -109,7 +85,7 @@ public class UserService {
 
     public String updatePassword(String currentUsername, UpdatePasswordRequest request) {
         User user = findUserByUsername(currentUsername);
-        validateOldPassword(user, request.getOldPassword());
+        authService.validateOldPassword(user, request.getOldPassword());
         changePassword(user, request.getNewPassword());
         return "Пароль успешно обновлён";
     }
@@ -120,4 +96,5 @@ public class UserService {
     }
 
     /* ==================================================================== */
+
 }

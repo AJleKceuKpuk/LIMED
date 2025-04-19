@@ -47,6 +47,9 @@ public class Token {
         this.revokedAt = null;
     }
 
+    public Token() {
+    }
+
     public void setRevoked(Boolean revoked) {
         this.revoked = revoked;
         if (revoked) {

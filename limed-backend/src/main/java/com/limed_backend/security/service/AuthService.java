@@ -10,16 +10,19 @@ import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.Cookie;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Date;
+import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -31,14 +34,37 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final RoleRepository roleRepository;
     private final TokenService tokenService;
-    private final UserService userService;
+
+    // Проверка Имени
+    public void validateUsername(String newUsername) {
+        Optional<User> userExists = userRepository.findByUsername(newUsername);
+        if (userExists.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Логин уже используется");
+        }
+    }
+
+    // Проверка Email
+    public void validateEmailAvailability(String newEmail) {
+        Optional<User> emailExists = userRepository.findByEmail(newEmail);
+        if (emailExists.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже используется");
+        }
+    }
+
+    // Проверка старого пароля
+    public void validateOldPassword(User user, String oldPassword) {
+        if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неверный старый пароль");
+        }
+    }
+
 
     /* ==================================================================== */
     // Логика /registration
 
     public String registration(RegistrationRequest request) {
-        userService.validateUsername(request.getUsername());
-        userService.validateEmailAvailability(request.getEmail());
+        validateUsername(request.getUsername());
+        validateEmailAvailability(request.getEmail());
         createAndSaveUser(request);
         return "Пользователь зарегистрирован";
     }
@@ -74,6 +100,15 @@ public class AuthService {
         return new TokenResponse(accessToken);
     }
 
+    public void addRefreshTokenCookie(String refreshToken, HttpServletResponse response) {
+        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
+        refreshTokenCookie.setHttpOnly(true);
+        refreshTokenCookie.setSecure(true);
+        refreshTokenCookie.setPath("/");
+        refreshTokenCookie.setMaxAge(cookieLifetime(refreshToken));
+        response.addCookie(refreshTokenCookie);
+    }
+
     private void authenticateUser(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
@@ -85,15 +120,6 @@ public class AuthService {
             user.updateTokenRefresh();
             userRepository.save(user);
         });
-    }
-
-    public void addRefreshTokenCookie(String refreshToken, HttpServletResponse response) {
-        Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
-        refreshTokenCookie.setHttpOnly(true);
-        refreshTokenCookie.setSecure(true);
-        refreshTokenCookie.setPath("/");
-        refreshTokenCookie.setMaxAge(cookieLifetime(refreshToken));
-        response.addCookie(refreshTokenCookie);
     }
 
     private int cookieLifetime(String refreshToken) {
