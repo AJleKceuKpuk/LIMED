@@ -2,6 +2,7 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.*;
 import com.limed_backend.security.entity.User;
+import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
@@ -32,7 +33,7 @@ public class UserService {
     //обновление статуса пользователя в БД
     public void updateOnlineStatus(Long userId, String status) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User fot found, id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с id " + userId + " не найден"));
         user.setStatus(status);
         userRepository.save(user);
     }
@@ -40,7 +41,7 @@ public class UserService {
     //обновление последней активности в БД
     public void updateLastActivity(Long userId, LocalDateTime activityTime) {
         User user = userRepository.findById(userId)
-                .orElseThrow(() -> new RuntimeException("User not found, id: " + userId));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с id " + userId + " не найден"));
         user.setLastActivity(activityTime);
         userRepository.save(user);
     }
@@ -48,7 +49,12 @@ public class UserService {
     // Поиск пользователя
     private User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Пользователь не найден"));
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+    }
+
+    public User findUserbyId(Long id){
+        return userRepository.findById(id).
+                orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
     }
 
     /* ==================================================================== */

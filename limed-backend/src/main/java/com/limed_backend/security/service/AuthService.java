@@ -4,6 +4,11 @@ import com.limed_backend.security.dto.LoginRequest;
 import com.limed_backend.security.dto.RegistrationRequest;
 import com.limed_backend.security.dto.TokenResponse;
 import com.limed_backend.security.entity.User;
+import com.limed_backend.security.entity.Role;
+import com.limed_backend.security.exception.EmailAlreadyExistsException;
+import com.limed_backend.security.exception.InvalidOldPasswordException;
+import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.exception.UsernameAlreadyExistsException;
 import com.limed_backend.security.jwt.JwtCore;
 import com.limed_backend.security.repository.RoleRepository;
 import com.limed_backend.security.repository.UserRepository;
@@ -39,7 +44,7 @@ public class AuthService {
     public void validateUsername(String newUsername) {
         Optional<User> userExists = userRepository.findByUsername(newUsername);
         if (userExists.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Логин уже используется");
+            throw new UsernameAlreadyExistsException();
         }
     }
 
@@ -47,14 +52,14 @@ public class AuthService {
     public void validateEmailAvailability(String newEmail) {
         Optional<User> emailExists = userRepository.findByEmail(newEmail);
         if (emailExists.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Email уже используется");
+            throw new EmailAlreadyExistsException();
         }
     }
 
     // Проверка старого пароля
     public void validateOldPassword(User user, String oldPassword) {
         if (!passwordEncoder.matches(oldPassword, user.getPassword())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Неверный старый пароль");
+            throw new InvalidOldPasswordException();
         }
     }
 
@@ -70,11 +75,14 @@ public class AuthService {
     }
 
     private void createAndSaveUser(RegistrationRequest request) {
+
+        Role userRole = roleRepository.findByName("USER")
+                .orElseThrow(() -> new ResourceNotFoundException("Роль 'USER' не найдена"));
         User user = User.builder()
                 .username(request.getUsername())
                 .email(request.getEmail())
                 .password(passwordEncoder.encode(request.getPassword()))
-                .roles(Collections.singleton(roleRepository.findByName("USER")))
+                .roles(Collections.singleton(userRole))
                 .status("offline")
                 .dateRegistration(LocalDate.now())
                 .build();

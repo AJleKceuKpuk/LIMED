@@ -46,8 +46,8 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable) //Отключаем стандарный String Security logout
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/start", "/login","/ws/**","/user/status", "/registration", "/token/**").permitAll()
-                        .requestMatchers("/game", "/logout").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/start", "/login","/ws/**", "/registration", "/token/**").permitAll()
+                        .requestMatchers("/game", "/logout", "/user/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
