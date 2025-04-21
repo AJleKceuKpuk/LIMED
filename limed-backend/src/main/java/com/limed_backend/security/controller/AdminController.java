@@ -5,8 +5,6 @@ import com.limed_backend.security.entity.User;
 import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AdminService;
-import com.limed_backend.security.service.UserService;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -21,10 +19,8 @@ public class AdminController {
 
     @Autowired
     private UserRepository userRepository;
-
     @Autowired
     private UserMapper userMapper;
-
     @Autowired
     private AdminService adminService;
 
@@ -63,17 +59,18 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/give-muted/{id}")
-    public ResponseEntity<String> giveMuted(@RequestBody GiveMutedRequest request,
-                                            @PathVariable Long id){
-        String result = adminService.giveMuted(request, id);
+    @PostMapping("/give-blocked")
+    public ResponseEntity<String> giveMuted(@RequestBody GiveBlockRequest request,
+                                            Authentication authentication){
+        String result = adminService.giveBlock(request, authentication);
         return ResponseEntity.ok(result);
     }
 
-
-//    @PostMapping("/give-muted")
-//    @PostMapping("/give-ban")
-//    @PutMapping("/unban")
-//    @PutMapping("/unmuted")
+    @PostMapping("/unblock")
+    public ResponseEntity<String> unblock(@RequestBody UnblockRequest request,
+                                          Authentication authentication){
+        String result = adminService.unblock(request, authentication);
+        return ResponseEntity.ok(result);
+    }
 
 }

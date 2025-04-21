@@ -17,7 +17,6 @@ public interface UserMapper {
 
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
     @Mapping(target = "blocking", source = "blockings")
-
     UserResponse toUserResponse(User user);
 
     @Named("mapRoles")

@@ -8,10 +8,9 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Data
-public class GiveMutedRequest {
+public class GiveBlockRequest {
+    private String username;
     private String blockingType;
-    private LocalDateTime startTime;
-    private LocalDateTime endTime;
+    private String duration;
     private String reason;
-    private User user;
 }

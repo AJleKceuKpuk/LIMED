@@ -47,7 +47,7 @@ public class UserService {
     }
 
     // Поиск пользователя
-    private User findUserByUsername(String username) {
+    public User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
     }

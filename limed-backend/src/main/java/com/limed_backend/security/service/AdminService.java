@@ -1,19 +1,21 @@
 package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.*;
+import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.UserMapper;
+import com.limed_backend.security.repository.BlockingRepository;
 import com.limed_backend.security.repository.RoleRepository;
 import com.limed_backend.security.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PathVariable;
 
-import java.util.HashSet;
-import java.util.Optional;
-import java.util.Set;
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.util.*;
 
 @Service
 public class AdminService {
@@ -28,6 +30,8 @@ public class AdminService {
     private UserService userService;
     @Autowired
     private RoleRepository roleRepository;
+    @Autowired
+    private BlockingRepository blockingRepository;
 
 
     public UserResponse getUserById(Long id) {
@@ -65,11 +69,48 @@ public class AdminService {
         return "Роли пользователя успешно обновлены!";
     }
 
-    public String giveMuted(GiveMutedRequest request, Long id){
 
+    public String giveBlock(GiveBlockRequest request, Authentication authentication) {
+        User user = userService.findUserByUsername(request.getUsername());
 
+        LocalDateTime startTime = LocalDateTime.now();
+        Duration duration = DurationParser.parseDuration(request.getDuration());
+        LocalDateTime endTime = startTime.plus(duration);
 
-        return "";
+        Blocking block = Blocking.builder()
+                .blockingType(request.getBlockingType())
+                .startTime(startTime)
+                .endTime(endTime)
+                .reason(request.getReason())
+                .user(user)
+                .blockedBy(userService.findUserByUsername(authentication.getName()))
+                .build();
+
+        blockingRepository.save(block);
+
+        return "Пользователь " + user.getUsername() + " заблокирован до " + endTime;
+    }
+
+    public String unblock(UnblockRequest request, Authentication authentication) {
+        User user = userService.findUserByUsername(request.getUsername());
+        User unblockingAdmin = userService.findUserByUsername(authentication.getName());
+
+        List<Blocking> activeBlocks = blockingRepository
+                .findByUserAndBlockingTypeAndRevokedBlockFalse(user, request.getBlockingType());
+
+        if (activeBlocks.isEmpty()) {
+            return "Нет активных блокировок типа " + request.getBlockingType()
+                    + " для пользователя " + user.getUsername();
+        }
+
+        activeBlocks.forEach(block -> {
+            block.setRevokedBlock(true);
+            block.setRevokedBy(unblockingAdmin);
+        });
+
+        blockingRepository.saveAll(activeBlocks);
+
+        return "Пользователь " + user.getUsername() + " разблокирован для типа ";
     }
 
 }
