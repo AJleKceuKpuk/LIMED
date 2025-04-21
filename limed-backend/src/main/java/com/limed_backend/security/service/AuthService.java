@@ -96,8 +96,7 @@ public class AuthService {
         }
         String accessToken = tokenService.issueAccessToken(request, loginRequest.getUsername());
         String refreshToken = tokenService.issueRefreshToken(request, loginRequest.getUsername());
-
-        updateUserStatus(loginRequest.getUsername());
+        updateUserStatus(loginRequest.getUsername(), "online");
         addRefreshTokenCookie(refreshToken, response);
 
         return new TokenResponse(accessToken);
@@ -121,9 +120,9 @@ public class AuthService {
     }
 
     // обновление статуса пользователя в БД
-    private void updateUserStatus(String username) {
+    private void updateUserStatus(String username, String status) {
         userRepository.findByUsername(username).ifPresent(user -> {
-            user.updateStatusUser();
+            user.updateStatusUser(status);
             userRepository.save(user);
         });
     }
@@ -140,6 +139,7 @@ public class AuthService {
         revokeRefreshTokenFromCookies(request, response);
         String accessToken = jwtCore.getJwtFromHeader(request);
         tokenService.revokeToken(jwtCore.getJti(accessToken));
+        updateUserStatus(jwtCore.getUsernameFromToken(accessToken), "offline");
         return ResponseEntity.ok("Вы успешно вышли из системы. Токены деактивированы.");
     }
 

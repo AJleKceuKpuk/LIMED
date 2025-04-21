@@ -35,6 +35,7 @@ public class AuthController {
 
     @PostMapping("/login")
     public TokenResponse login(HttpServletRequest request, @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        System.out.println("/login");
         return authService.login(request, loginRequest, response);
     }
 
