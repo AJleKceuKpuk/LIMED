@@ -1,9 +1,9 @@
 package com.limed_backend.security.controller;
 
-import com.limed_backend.security.dto.TokenResponse;
-import com.limed_backend.security.dto.UpdateEmailRequest;
-import com.limed_backend.security.dto.UpdatePasswordRequest;
-import com.limed_backend.security.dto.UpdateUsernameRequest;
+import com.limed_backend.security.dto.Responses.TokenResponse;
+import com.limed_backend.security.dto.Requests.UpdateEmailRequest;
+import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
+import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AuthService;
 import com.limed_backend.security.service.TokenService;
@@ -34,7 +34,6 @@ public class UserController {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
     }
-
 
     @PutMapping("/update-username")
     public ResponseEntity<TokenResponse> updateUsername(@RequestBody UpdateUsernameRequest request,

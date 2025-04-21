@@ -1,6 +1,6 @@
 package com.limed_backend.security.mapper;
 
-import com.limed_backend.security.dto.BlockingResponse;
+import com.limed_backend.security.dto.Responses.BlockingResponse;
 import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.User;
 import org.mapstruct.Mapper;

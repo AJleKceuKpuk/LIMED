@@ -34,4 +34,13 @@ public class GlobalExceptionHandler {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ex.getMessage());
     }
 
+    @ExceptionHandler(AccountBannedException.class)
+    public ResponseEntity<String> handleAccountBanned(AccountBannedException ex) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidUsernameOrPasswordException.class)
+    public ResponseEntity<String> handleInvalidUsernameOrPassword(InvalidUsernameOrPasswordException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(ex.getMessage());
+    }
 }

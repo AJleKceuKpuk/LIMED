@@ -10,4 +10,5 @@ import java.util.List;
 @Repository
 public interface BlockingRepository extends JpaRepository<Blocking, Long> {
     List<Blocking> findByUserAndBlockingTypeAndRevokedBlockFalse(User user, String blockingType);
+
 }

@@ -16,7 +16,6 @@ public interface TokenRepository extends JpaRepository<Token, Long> {
 
     List<Token> findByRevokedTrue();
 
-
     List<Token> findByRevokedTrueAndRevokedAtAfter(Date revokedAt);
 
     // Метод для удаления старых токенов

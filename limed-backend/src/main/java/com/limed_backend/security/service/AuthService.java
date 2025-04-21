@@ -1,28 +1,23 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.LoginRequest;
-import com.limed_backend.security.dto.RegistrationRequest;
-import com.limed_backend.security.dto.TokenResponse;
+import com.limed_backend.security.dto.Requests.LoginRequest;
+import com.limed_backend.security.dto.Requests.RegistrationRequest;
+import com.limed_backend.security.dto.Responses.TokenResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.entity.Role;
-import com.limed_backend.security.exception.EmailAlreadyExistsException;
-import com.limed_backend.security.exception.InvalidOldPasswordException;
-import com.limed_backend.security.exception.ResourceNotFoundException;
-import com.limed_backend.security.exception.UsernameAlreadyExistsException;
-import com.limed_backend.security.jwt.JwtCore;
+import com.limed_backend.security.exception.*;
+import com.limed_backend.security.config.JwtCore;
 import com.limed_backend.security.repository.RoleRepository;
 import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import jakarta.servlet.http.Cookie;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.time.LocalDate;
 import java.util.Collections;
@@ -74,6 +69,7 @@ public class AuthService {
         return "Пользователь зарегистрирован";
     }
 
+    // создаем и сохраняем в бд пользователя
     private void createAndSaveUser(RegistrationRequest request) {
 
         Role userRole = roleRepository.findByName("USER")
@@ -96,8 +92,7 @@ public class AuthService {
         try {
             authenticateUser(loginRequest);
         } catch (Exception ex) {
-            System.err.println("Error: " + ex.getMessage());
-            throw ex;
+            throw new InvalidUsernameOrPasswordException();
         }
         String accessToken = tokenService.issueAccessToken(loginRequest.getUsername());
         String refreshToken = tokenService.issueRefreshToken(loginRequest.getUsername());
@@ -108,6 +103,7 @@ public class AuthService {
         return new TokenResponse(accessToken);
     }
 
+    // добавление refresh token в куки
     public void addRefreshTokenCookie(String refreshToken, HttpServletResponse response) {
         Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
@@ -117,19 +113,22 @@ public class AuthService {
         response.addCookie(refreshTokenCookie);
     }
 
+    // аутентификация пользователя
     private void authenticateUser(LoginRequest request) {
         authenticationManager.authenticate(
                 new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
         );
     }
 
+    // обновление статуса пользователя в БД
     private void updateUserTokenRefresh(String username) {
         userRepository.findByUsername(username).ifPresent(user -> {
-            user.updateTokenRefresh();
+            user.updateStatusUser();
             userRepository.save(user);
         });
     }
 
+    // вычисление времени жизни куки
     private int cookieLifetime(String refreshToken) {
         Date refreshExpiration = jwtCore.getExpirationFromToken(refreshToken);
         return (int) ((refreshExpiration.getTime() - System.currentTimeMillis()) / 1000);

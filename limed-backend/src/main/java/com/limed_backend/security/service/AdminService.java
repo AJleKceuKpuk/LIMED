@@ -1,6 +1,7 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.*;
+import com.limed_backend.security.dto.Requests.*;
+import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
@@ -33,13 +34,14 @@ public class AdminService {
     @Autowired
     private BlockingRepository blockingRepository;
 
-
+    //поиск пользователя по ID
     public UserResponse getUserById(Long id) {
         User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь с id  " + id + " не найден"));
         return userMapper.toUserResponse(user);
     }
 
+    // изменение имени пользователя принудительно
     public String editUsername(UpdateUsernameRequest request, Long id){
         User user = userService.findUserbyId(id);
         authService.validateUsername(request.getNewUsername());
@@ -48,6 +50,7 @@ public class AdminService {
         return "Имя игрока изменено";
     }
 
+    // изменение почты пользователя принудительно
     public String editEmail(UpdateEmailRequest request, Long id){
         User user = userService.findUserbyId(id);
         authService.validateEmailAvailability(request.getNewEmail());
@@ -56,6 +59,7 @@ public class AdminService {
         return "Email игрока сохранен";
     }
 
+    // редактировать Роли пользователя
     public String editRole(UpdateRoleRequest request, Long id) {
         User user = userService.findUserbyId(id);
         Set<Role> newRoles = new HashSet<>();
@@ -69,14 +73,12 @@ public class AdminService {
         return "Роли пользователя успешно обновлены!";
     }
 
-
+    // выдать блокировку пользователя
     public String giveBlock(GiveBlockRequest request, Authentication authentication) {
         User user = userService.findUserByUsername(request.getUsername());
-
         LocalDateTime startTime = LocalDateTime.now();
         Duration duration = DurationParser.parseDuration(request.getDuration());
         LocalDateTime endTime = startTime.plus(duration);
-
         Blocking block = Blocking.builder()
                 .blockingType(request.getBlockingType())
                 .startTime(startTime)
@@ -85,12 +87,11 @@ public class AdminService {
                 .user(user)
                 .blockedBy(userService.findUserByUsername(authentication.getName()))
                 .build();
-
         blockingRepository.save(block);
-
         return "Пользователь " + user.getUsername() + " заблокирован до " + endTime;
     }
 
+    // снять блокировку пользователя
     public String unblock(UnblockRequest request, Authentication authentication) {
         User user = userService.findUserByUsername(request.getUsername());
         User unblockingAdmin = userService.findUserByUsername(authentication.getName());

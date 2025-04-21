@@ -1,4 +1,4 @@
-package com.limed_backend.security.dto;
+package com.limed_backend.security.dto.Requests;
 
 import com.limed_backend.security.entity.User;
 import lombok.Data;

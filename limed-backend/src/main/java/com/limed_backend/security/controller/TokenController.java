@@ -1,7 +1,7 @@
 package com.limed_backend.security.controller;
 
 
-import com.limed_backend.security.dto.AccessTokenResponse;
+import com.limed_backend.security.dto.Responses.TokenResponse;
 import com.limed_backend.security.service.TokenService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -17,13 +17,11 @@ public class TokenController {
 
     private final TokenService tokenService;
 
-
-    //@RequestHeader(name = "Authorization", required = false) String authHeader
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(HttpServletRequest request) {
         try {
             String newAccessToken = tokenService.refreshAccessToken(request);
-            return ResponseEntity.ok(new AccessTokenResponse(newAccessToken));
+            return ResponseEntity.ok(new TokenResponse(newAccessToken));
         } catch (JwtException ex) {
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)

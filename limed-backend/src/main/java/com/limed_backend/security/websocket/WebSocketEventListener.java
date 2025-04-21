@@ -1,6 +1,6 @@
 package com.limed_backend.security.websocket;
 
-import com.limed_backend.security.service.UserConnectionService;
+import com.limed_backend.security.service.ConnectionService;
 import com.limed_backend.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.event.EventListener;
@@ -17,7 +17,7 @@ public class WebSocketEventListener {
     private UserService userService;
 
     @Autowired
-    private UserConnectionService userConnectionService;
+    private ConnectionService connectionService;
 
     @EventListener
     public void handleSessionDisconnect(SessionDisconnectEvent event) {
@@ -36,7 +36,7 @@ public class WebSocketEventListener {
                 Long userId = Long.parseLong(userIdObj.toString());
                 userService.updateOnlineStatus(userId, "offline");
                 userService.updateLastActivity(userId, LocalDateTime.now());
-                userConnectionService.removeUser(userId);
+                connectionService.removeUser(userId);
             } catch (NumberFormatException e) {
                 System.err.println("Error converting userId: " + userIdObj);
             }

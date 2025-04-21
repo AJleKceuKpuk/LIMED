@@ -57,7 +57,7 @@ public class User {
     @OneToMany(mappedBy = "friend", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Friends> friendshipsReceived = new ArrayList<>();
 
-    public void updateTokenRefresh() {
+    public void updateStatusUser() {
         this.status = "online";
     }
 }

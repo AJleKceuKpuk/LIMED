@@ -1,7 +1,6 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.UserStatusRequest;
-import com.limed_backend.security.service.UserService;
+import com.limed_backend.security.dto.Requests.UserStatusRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -15,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @Service
 @RequiredArgsConstructor
-public class UserConnectionService {
+public class ConnectionService {
 
     private final Map<Long, Long> userLastActivity = new ConcurrentHashMap<>();
     @Autowired
@@ -43,7 +42,6 @@ public class UserConnectionService {
         long inactivityThreshold = 60000;
 
         userLastActivity.forEach((userId, lastActivityMillis) -> { //проходим по всей Map и смотрим юзера на последнюю активность
-            System.out.println("Checking user id: " + userId);
             if (currentTime - lastActivityMillis > inactivityThreshold) {
                 userService.updateOnlineStatus(userId, "away");
                 LocalDateTime recordedLastActivity = java.time.Instant

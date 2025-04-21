@@ -1,6 +1,9 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.*;
+import com.limed_backend.security.dto.Requests.UpdateEmailRequest;
+import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
+import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
+import com.limed_backend.security.dto.Responses.TokenResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.UserMapper;
@@ -8,13 +11,9 @@ import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.HttpStatus;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
-
 import java.time.LocalDateTime;
-import java.util.Optional;
 
 @Service
 @RequiredArgsConstructor
@@ -68,6 +67,7 @@ public class UserService {
         return generateAndSetTokens(user, response);
     }
 
+    //регенирация и выдача токенов
     private TokenResponse generateAndSetTokens(User user, HttpServletResponse response) {
         String newAccessToken = tokenService.issueAccessToken(user.getUsername());
         String newRefreshToken = tokenService.issueRefreshToken(user.getUsername());
@@ -96,6 +96,7 @@ public class UserService {
         return "Пароль успешно обновлён";
     }
 
+    //Изменение пароля в БД
     private void changePassword(User user, String newPassword) {
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);

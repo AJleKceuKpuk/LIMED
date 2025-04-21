@@ -1,6 +1,6 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.jwt.JwtCore;
+import com.limed_backend.security.config.JwtCore;
 import com.limed_backend.security.entity.Token;
 import com.limed_backend.security.repository.TokenRepository;
 import io.jsonwebtoken.Claims;
@@ -95,7 +95,6 @@ public class TokenService {
         }
         return null;
     }
-
 
     // Проверяет, что access токен существует в базе и не отозван
     private void validateAccessTokenRecord(Claims accessClaims) {

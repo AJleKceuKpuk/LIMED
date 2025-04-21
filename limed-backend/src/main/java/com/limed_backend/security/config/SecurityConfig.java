@@ -1,8 +1,10 @@
 package com.limed_backend.security.config;
 
-import com.limed_backend.security.jwt.JwtAuthenticationFilter;
-import com.limed_backend.security.service.UserDetailsServiceImpl;
+import com.limed_backend.security.repository.BlockingRepository;
+import com.limed_backend.security.service.ImplUserDetailsService;
+import com.limed_backend.security.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -21,11 +23,18 @@ import org.springframework.security.web.SecurityFilterChain;
 @RequiredArgsConstructor
 public class SecurityConfig {
 
-    private final UserDetailsServiceImpl userDetailsService;
+    private final ImplUserDetailsService userDetailsService;
 
+    @Autowired
+    private BlockingRepository blockingRepository;
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
         return new JwtAuthenticationFilter();
+    }
+
+    @Bean
+    public BanCheckFilter banCheckFilter(UserService userService, BlockingRepository blockingRepository) {
+        return new BanCheckFilter(userService, blockingRepository);
     }
 
     @Bean
@@ -34,24 +43,33 @@ public class SecurityConfig {
     }
 
     @Bean
-    public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
+    public AuthenticationManager authenticationManager(
+            AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
 
-    //Цепочка основных фильтров для доступа по ролям
+
+
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .csrf(AbstractHttpConfigurer::disable) // Отключаем csrf для REST API
-                .logout(AbstractHttpConfigurer::disable) //Отключаем стандарный String Security logout
+                .csrf(AbstractHttpConfigurer::disable)
+                .logout(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers("/start", "/login","/ws/**", "/registration", "/token/**").permitAll()
+                        .requestMatchers("/start", "/login", "/ws/**", "/registration", "/token/**").permitAll()
                         .requestMatchers("/game", "/logout", "/user/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
-                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class);
+                .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
+                // Регистрируем BanCheckFilter после jwtAuthenticationFilter
+                .addFilterAfter(banCheckFilter(null, null), JwtAuthenticationFilter.class);
+        // В данном вызове выше параметры будут проигнорированы – важно, чтобы бин BanCheckFilter
+        // был зарегистрирован через метод banCheckFilter(UserService, BlockingRepository)
         return http.build();
     }
+
+    // Объявляем бин с параметрами, чтобы Spring сам нашёл необходимые зависимости
+
 }

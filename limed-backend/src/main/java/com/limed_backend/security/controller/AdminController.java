@@ -1,6 +1,7 @@
 package com.limed_backend.security.controller;
 
-import com.limed_backend.security.dto.*;
+import com.limed_backend.security.dto.Requests.*;
+import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;

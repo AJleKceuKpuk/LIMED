@@ -1,7 +1,7 @@
 package com.limed_backend.security.websocket;
 
-import com.limed_backend.security.dto.UserStatusRequest;
-import com.limed_backend.security.service.UserConnectionService;
+import com.limed_backend.security.dto.Requests.UserStatusRequest;
+import com.limed_backend.security.service.ConnectionService;
 import com.limed_backend.security.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
@@ -15,7 +15,7 @@ public class WebSocketController {
     private UserService userService;
 
     @Autowired
-    private UserConnectionService connectionService;
+    private ConnectionService connectionService;
 
     @Autowired
     private SimpMessagingTemplate simpMessagingTemplate;

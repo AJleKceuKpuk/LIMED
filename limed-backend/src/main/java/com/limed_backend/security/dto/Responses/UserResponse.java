@@ -1,15 +1,12 @@
-package com.limed_backend.security.dto;
+package com.limed_backend.security.dto.Responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.limed_backend.security.entity.Blocking;
-import jakarta.persistence.Column;
+import com.limed_backend.security.dto.Responses.BlockingResponse;
 import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Data
 @JsonInclude(JsonInclude.Include.NON_NULL)
