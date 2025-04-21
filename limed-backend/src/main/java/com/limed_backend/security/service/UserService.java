@@ -8,6 +8,7 @@ import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -58,19 +59,19 @@ public class UserService {
 
     /* ==================================================================== */
     // Логика update username
-    public TokenResponse updateUsername(String currentUsername, UpdateUsernameRequest request, HttpServletResponse response) {
+    public TokenResponse updateUsername(HttpServletRequest request, String currentUsername, UpdateUsernameRequest userRequest, HttpServletResponse response) {
         User user = findUserByUsername(currentUsername);
-        authService.validateUsername(request.getNewUsername());
+        authService.validateUsername(userRequest.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
-        user.setUsername(request.getNewUsername());
+        user.setUsername(userRequest.getNewUsername());
         userRepository.save(user);
-        return generateAndSetTokens(user, response);
+        return generateAndSetTokens(request, user, response);
     }
 
     //регенирация и выдача токенов
-    private TokenResponse generateAndSetTokens(User user, HttpServletResponse response) {
-        String newAccessToken = tokenService.issueAccessToken(user.getUsername());
-        String newRefreshToken = tokenService.issueRefreshToken(user.getUsername());
+    private TokenResponse generateAndSetTokens(HttpServletRequest request, User user, HttpServletResponse response) {
+        String newAccessToken = tokenService.issueAccessToken(request, user.getUsername());
+        String newRefreshToken = tokenService.issueRefreshToken(request, user.getUsername());
         authService.addRefreshTokenCookie(newRefreshToken, response);
         return new TokenResponse(newAccessToken);
     }

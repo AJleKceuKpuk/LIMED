@@ -26,23 +26,23 @@ public class TokenService {
     private TokenRepository tokenRepository;
 
     //запись Access токена в базу данных
-    public String issueAccessToken(String username) {
+    public String issueAccessToken(HttpServletRequest request, String username) {
         String token = jwtCore.generateAccessToken(username);
         String jti = jwtCore.getJti(token);
         Date issuedAt = new Date();
         Date expiration = jwtCore.getExpirationFromToken(token);
-        Token record = new Token(jti, username, issuedAt, expiration, "access");
+        Token record = new Token(jti, username, issuedAt, expiration, "access", request.getRemoteAddr());
         tokenRepository.save(record);
         return token;
     }
 
     //запись Refresh токена в базу данных
-    public String issueRefreshToken(String username) {
+    public String issueRefreshToken(HttpServletRequest request, String username) {
         String token = jwtCore.generateRefreshToken(username);
         String jti = jwtCore.getJti(token);
         Date issuedAt = new Date();
         Date expiration = jwtCore.getExpirationFromToken(token);
-        Token record = new Token(jti, username, issuedAt, expiration, "refresh");
+        Token record = new Token(jti, username, issuedAt, expiration, "refresh", request.getRemoteAddr());
         tokenRepository.save(record);
         return token;
     }
@@ -81,7 +81,7 @@ public class TokenService {
         validateTokenOwnership(refreshToken, accessClaims);
 
         revokeToken(accessClaims.getId());
-        return issueAccessToken(usernameFromAccess);
+        return issueAccessToken(request, usernameFromAccess);
     }
 
     // Извлекает Refresh Токен из Куки

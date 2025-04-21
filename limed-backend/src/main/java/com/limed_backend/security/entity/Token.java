@@ -37,7 +37,11 @@ public class Token {
     @Column(nullable = false)
     private String tokenType;
 
-    public Token(String jti, String username, Date issuedAt, Date expiration, String tokenType) {
+    // Поле для хранения IP-адреса, с которого был выдан токен.
+    @Column(length = 45)
+    private String ipAddress;
+
+    public Token(String jti, String username, Date issuedAt, Date expiration, String tokenType, String ipAddress) {
         this.jti = jti;
         this.username = username;
         this.issuedAt = issuedAt;
@@ -45,6 +49,7 @@ public class Token {
         this.tokenType = tokenType;
         this.revoked = false;
         this.revokedAt = null;
+        this.ipAddress = ipAddress;
     }
 
     public Token() {

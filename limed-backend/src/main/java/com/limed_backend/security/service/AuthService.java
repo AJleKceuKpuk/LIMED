@@ -88,16 +88,16 @@ public class AuthService {
     /* ==================================================================== */
     // Логика /login
 
-    public TokenResponse login(LoginRequest loginRequest, HttpServletResponse response) {
+    public TokenResponse login(HttpServletRequest request, LoginRequest loginRequest, HttpServletResponse response) {
         try {
             authenticateUser(loginRequest);
         } catch (Exception ex) {
             throw new InvalidUsernameOrPasswordException();
         }
-        String accessToken = tokenService.issueAccessToken(loginRequest.getUsername());
-        String refreshToken = tokenService.issueRefreshToken(loginRequest.getUsername());
+        String accessToken = tokenService.issueAccessToken(request, loginRequest.getUsername());
+        String refreshToken = tokenService.issueRefreshToken(request, loginRequest.getUsername());
 
-        updateUserTokenRefresh(loginRequest.getUsername());
+        updateUserStatus(loginRequest.getUsername());
         addRefreshTokenCookie(refreshToken, response);
 
         return new TokenResponse(accessToken);
@@ -121,7 +121,7 @@ public class AuthService {
     }
 
     // обновление статуса пользователя в БД
-    private void updateUserTokenRefresh(String username) {
+    private void updateUserStatus(String username) {
         userRepository.findByUsername(username).ifPresent(user -> {
             user.updateStatusUser();
             userRepository.save(user);

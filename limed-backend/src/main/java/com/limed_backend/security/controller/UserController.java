@@ -8,6 +8,7 @@ import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AuthService;
 import com.limed_backend.security.service.TokenService;
 import com.limed_backend.security.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -36,10 +37,10 @@ public class UserController {
     }
 
     @PutMapping("/update-username")
-    public ResponseEntity<TokenResponse> updateUsername(@RequestBody UpdateUsernameRequest request,
+    public ResponseEntity<TokenResponse> updateUsername(HttpServletRequest request, @RequestBody UpdateUsernameRequest userRequest,
                                                         Authentication authentication,
                                                         HttpServletResponse response) {
-        TokenResponse tokenResponse = userService.updateUsername(authentication.getName(), request, response);
+        TokenResponse tokenResponse = userService.updateUsername(request, authentication.getName(), userRequest, response);
         return ResponseEntity.ok(tokenResponse);
     }
 
