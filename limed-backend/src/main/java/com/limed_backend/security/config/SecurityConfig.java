@@ -7,8 +7,6 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.core.Ordered;
-import org.springframework.core.annotation.Order;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -20,10 +18,13 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
 
 import java.util.Arrays;
+
+import static org.springframework.security.config.Customizer.withDefaults;
 
 @Configuration
 @EnableWebSecurity
@@ -34,6 +35,7 @@ public class SecurityConfig {
 
     @Autowired
     private BlockingRepository blockingRepository;
+
 
     @Bean
     public JwtAuthenticationFilter jwtAuthenticationFilter() {
@@ -56,27 +58,31 @@ public class SecurityConfig {
         return authConfig.getAuthenticationManager();
     }
 
-    // Регистрация фильтра CORS, который будет отрабатывать ДО цепочки безопасности
+    // Регистрация фильтра CORS, который отрабатывает ДО цепочки безопасности
     @Bean
-    public CorsFilter corsFilter() {
+    public CorsConfigurationSource corsConfigurationSource() {
         CorsConfiguration configuration = new CorsConfiguration();
-        configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://192.168.174.239:3000"));
+        configuration.setAllowedOrigins(Arrays.asList(
+                "http://localhost:3000",
+                "http://192.168.174.239:3000",
+                "https://192.168.0.180:3000"
+        ));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         configuration.setAllowedHeaders(Arrays.asList("*"));
         configuration.setAllowCredentials(true);
-
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
-        return new CorsFilter(source);
+        return source;
     }
 
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, BanCheckFilter banCheckFilter) throws Exception {
         http
-                // Убедитесь, что preflight-запросы проходят здесь
+                .cors(withDefaults()) // будет использовать бин CorsConfigurationSource
+                // остальные настройки...
                 .authorizeHttpRequests(authorize -> authorize
-                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll() // добавили для OPTIONS
+                        .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers("/start", "/login", "/ws/**", "/registration", "/token/**").permitAll()
                         .requestMatchers("/game", "/logout", "/user/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
@@ -86,9 +92,9 @@ public class SecurityConfig {
                 .logout(AbstractHttpConfigurer::disable)
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .addFilterBefore(jwtAuthenticationFilter(), UsernamePasswordAuthenticationFilter.class)
-                // Регистрируем BanCheckFilter после jwtAuthenticationFilter
-                .addFilterAfter(banCheckFilter(null, null), JwtAuthenticationFilter.class);
+                .addFilterAfter(banCheckFilter, JwtAuthenticationFilter.class);
 
         return http.build();
     }
+
 }

@@ -1,33 +1,31 @@
-// App.js
-import React from "react";
-import { BrowserRouter as Router, Routes, Route, Link, Navigate } from "react-router-dom";
-import Login from "./Login";
-import Register from "./Register";
-import Home from "./Home";
-import { useAuth } from "./AuthContext";
+// src/App.js
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './AuthContext';
+import NavBar from './components/NavBar';
+import Login from './components/Login';
+import Registration from './components/Registration';
+import Game from './components/Game';
+import UserProfile from './components/UserProfile';
+import AdminPage from './components/AdminPage';
+import UserDetail from './components/UserDetail';
 
-function App() {
-  const { user } = useAuth();
-
+const App = () => {
   return (
-    <Router>
-      <div>
-        <nav style={{ marginBottom: "20px" }}>
-          <Link to="/">Home</Link> |{" "}
-          {!user && (
-            <>
-              <Link to="/login">Login</Link> | <Link to="/register">Register</Link>
-            </>
-          )}
-        </nav>
+    <AuthProvider>
+      <Router>
+        <NavBar />
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={!user ? <Login /> : <Navigate to="/" />} />
-          <Route path="/register" element={!user ? <Register /> : <Navigate to="/" />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/registration" element={<Registration />} />
+          <Route path="/game" element={<Game />} />
+          <Route path="/user/profile" element={<UserProfile />} />
+          <Route path="/admin" element={<AdminPage />} />
+          <Route path="/admin/get-user/:id" element={<UserDetail />} />
         </Routes>
-      </div>
-    </Router>
+      </Router>
+    </AuthProvider>
   );
-}
+};
 
 export default App;

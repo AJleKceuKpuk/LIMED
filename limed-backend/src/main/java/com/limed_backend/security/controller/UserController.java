@@ -4,6 +4,8 @@ import com.limed_backend.security.dto.Responses.TokenResponse;
 import com.limed_backend.security.dto.Requests.UpdateEmailRequest;
 import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
 import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
+import com.limed_backend.security.dto.Responses.UserProfileResponse;
+import com.limed_backend.security.entity.User;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AuthService;
 import com.limed_backend.security.service.TokenService;
@@ -34,6 +36,13 @@ public class UserController {
                           PasswordEncoder passwordEncoder) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
+    }
+
+
+    @GetMapping("/profile")
+    public ResponseEntity<?> getProfile(Authentication authentication) {
+        User user = userService.findUserByUsername(authentication.getName());
+        return ResponseEntity.ok(new UserProfileResponse(user.getUsername(), user.getEmail(), user.getDateRegistration()));
     }
 
     @PutMapping("/update-username")

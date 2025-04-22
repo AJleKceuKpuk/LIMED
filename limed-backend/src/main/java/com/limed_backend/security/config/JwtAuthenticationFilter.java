@@ -43,6 +43,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     HttpServletResponse response,
                                     FilterChain filterChain)
             throws ServletException, IOException {
+        // Если запрос идёт на эндпоинт обновления токена, пропускаем проверку
+        if ("/token/refresh".equals(request.getServletPath())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+
         String jwt = jwtCore.getJwtFromHeader(request);
 
         if (StringUtils.hasText(jwt) && jwtCore.validateToken(jwt, null)) {

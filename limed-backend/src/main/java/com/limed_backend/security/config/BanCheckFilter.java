@@ -57,30 +57,4 @@ public class BanCheckFilter extends OncePerRequestFilter {
         filterChain.doFilter(request, response);
     }
 
-
-//    @Override
-//    protected void doFilterInternal(HttpServletRequest request,
-//                                    HttpServletResponse response,
-//                                    FilterChain filterChain) throws ServletException, IOException {
-//        if (request.getRequestURI().startsWith("/game")) {
-//            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
-//            if (auth == null || auth instanceof AnonymousAuthenticationToken) {
-//                filterChain.doFilter(request, response);
-//                return;
-//            }
-//            User user = userService.findUserByUsername(auth.getName());
-//            if (user != null) {
-//                List<Blocking> activeBlocks = blockingRepository.findByUserAndBlockingTypeAndRevokedBlockFalse(user, "ban");
-//                if (activeBlocks.stream().findAny().isPresent()) {
-//                    // Например, возьмем первую активную запись о бане.
-//                    Blocking banRecord = activeBlocks.get(0);
-//                    String banReason = banRecord.getReason(); // Предполагаем, что есть такое поле
-//                    response.setContentType("text/plain; charset=UTF-8");
-//                    response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-//                    response.getWriter().write("Доступ запрещен: аккаунт заблокирован. Причина: " + banReason);
-//                    return;
-//                }
-//            }
-//        }
-//        filterChain.doFilter(request, response);
 }
