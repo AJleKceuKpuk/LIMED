@@ -48,6 +48,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             filterChain.doFilter(request, response);
             return;
         }
+        if ("/logout".equals(request.getServletPath())) {
+            filterChain.doFilter(request, response);
+            return;
+        }
 
         String jwt = jwtCore.getJwtFromHeader(request);
 

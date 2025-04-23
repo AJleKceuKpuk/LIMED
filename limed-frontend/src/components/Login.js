@@ -12,14 +12,14 @@ const Login = () => {
   const handleLogin = async (e) => {
     e.preventDefault();
     try {
-      // Отправляем запрос на /login (с использованием базового URL из axiosInstance)
+      // Отправляем логин-запрос. Предполагается, что сервер возвращает accessToken.
       const response = await axiosInstance.post('/login', { username, password });
       
-      // Сохраняем значение поля accessToken и имя пользователя
+      // Сохраняем accessToken и username; id не передаём при логине.
       localStorage.setItem('accessToken', response.data.accessToken);
       localStorage.setItem('username', username);
       
-      // Переход на главную страницу/игру
+      // Переход на главную (например, на страницу игры)
       navigate('/game');
     } catch (err) {
       setError('Ошибка при входе. Проверьте имя пользователя и пароль.');

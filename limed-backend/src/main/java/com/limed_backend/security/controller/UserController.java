@@ -42,7 +42,7 @@ public class UserController {
     @GetMapping("/profile")
     public ResponseEntity<?> getProfile(Authentication authentication) {
         User user = userService.findUserByUsername(authentication.getName());
-        return ResponseEntity.ok(new UserProfileResponse(user.getUsername(), user.getEmail(), user.getDateRegistration()));
+        return ResponseEntity.ok(new UserProfileResponse(user.getId(),user.getUsername(), user.getEmail(), user.getDateRegistration()));
     }
 
     @PutMapping("/update-username")

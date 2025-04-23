@@ -11,6 +11,7 @@ import com.limed_backend.security.repository.RoleRepository;
 import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import jdk.swing.interop.SwingInterOpUtils;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -22,6 +23,7 @@ import jakarta.servlet.http.Cookie;
 import java.time.LocalDate;
 import java.util.Collections;
 import java.util.Date;
+import java.util.IllegalFormatCodePointException;
 import java.util.Optional;
 
 @Service
@@ -136,9 +138,16 @@ public class AuthService {
     /* ==================================================================== */
     // Логика /logout
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        System.out.println("/logout");
         revokeRefreshTokenFromCookies(request, response);
+        System.out.println("revoke refrehs");
         String accessToken = jwtCore.getJwtFromHeader(request);
+        if (accessToken == null){
+            return ResponseEntity.ok("Без авторизации нельзя");
+        }
+        System.out.println("Access " + accessToken);
         tokenService.revokeToken(jwtCore.getJti(accessToken));
+        System.out.println("revoke access");
         updateUserStatus(jwtCore.getUsernameFromToken(accessToken), "offline");
         return ResponseEntity.ok("Вы успешно вышли из системы. Токены деактивированы.");
     }
@@ -147,6 +156,7 @@ public class AuthService {
     private void revokeRefreshTokenFromCookies(HttpServletRequest request, HttpServletResponse response) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
+            System.out.println("Cookie null");
             return;
         }
         for (Cookie cookie : cookies) {
