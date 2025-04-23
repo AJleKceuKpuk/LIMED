@@ -55,6 +55,7 @@ axiosInstance.interceptors.request.use(
     if (accessToken) {
       try {
         const decoded = jwtDecode(accessToken);
+        // Если access токен истёк, пытаемся его обновить
         if (decoded.exp * 1000 < Date.now()) {
           if (!isRefreshing) {
             isRefreshing = true;
@@ -96,22 +97,27 @@ axiosInstance.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
-// Response-интерцептор для обработки 403 ошибки
+// Response-интерцептор для обработки ошибок
 axiosInstance.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response && error.response.status === 403) {
-      // Если получаем 403, значит у токенов проблема (refresh отозван, пользователь забанен и т.п.)
-      // Очищаем refresh-токен как из cookie, так и из localStorage
+    // Если ошибка 403, проверяем URL запроса
+    if (
+      error.response &&
+      error.response.status === 403 &&
+      (!error.config || !error.config.url || !error.config.url.includes('/admin/get-allusers'))
+    ) {
+      // Если это не запрос к /admin/get-allusers, очищаем refresh-токен и данные авторизации,
+      // затем перенаправляем на страницу входа.
       document.cookie = "refreshToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
       localStorage.removeItem('refreshToken');
-      // Очищаем остальные данные авторизации
       localStorage.removeItem('accessToken');
       localStorage.removeItem('username');
       localStorage.removeItem('userId');
-      // Перенаправляем пользователя на страницу входа
       window.location.href = '/login';
     }
+    // Для запроса к /admin/get-allusers с ошибкой 403 просто вернём ошибку,
+    // чтобы можно было обработать её в компоненте без разлогинивания пользователя.
     return Promise.reject(error);
   }
 );
