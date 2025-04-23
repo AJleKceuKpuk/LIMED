@@ -73,6 +73,4 @@ public class AdminController {
         String result = adminService.unblock(request, authentication);
         return ResponseEntity.ok(result);
     }
-
-
 }

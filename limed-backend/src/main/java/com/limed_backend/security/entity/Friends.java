@@ -1,10 +1,16 @@
 package com.limed_backend.security.entity;
 
 import jakarta.persistence.*;
+import lombok.AllArgsConstructor;
+import lombok.Builder;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 @Entity
 @Data
+@NoArgsConstructor  // Конструктор без параметров для JPA
+@AllArgsConstructor // Дополнительный конструктор для работы с @Builder
+@Builder
 @Table(name = "friends")
 public class Friends {
 
