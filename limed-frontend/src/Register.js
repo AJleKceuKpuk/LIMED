@@ -6,7 +6,6 @@ export default function Register() {
   const { registerUser } = useAuth();
   const navigate = useNavigate();
 
-  // Состояние для хранения данных формы и сообщений об ошибках
   const [credentials, setCredentials] = useState({
     username: "",
     email: "",

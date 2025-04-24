@@ -1,4 +1,3 @@
-// src/components/Logout.js
 import React from 'react';
 import axiosInstance from './axiosInstance'; 
 import { useNavigate } from 'react-router-dom';

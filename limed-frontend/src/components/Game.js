@@ -1,4 +1,3 @@
-// src/components/Game.js
 import React, { useState, useEffect } from 'react';
 import axiosInstance from './axiosInstance'; 
 import { useNavigate } from 'react-router-dom';

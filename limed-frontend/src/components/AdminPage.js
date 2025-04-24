@@ -1,4 +1,3 @@
-// src/components/AdminPage.js
 import React, { useState, useEffect } from 'react';
 import axiosInstance from './axiosInstance'; 
 import { Link } from 'react-router-dom';

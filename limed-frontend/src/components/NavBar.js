@@ -1,4 +1,3 @@
-// src/components/NavBar.js
 import React, { useEffect, useState, useRef } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import axiosInstance from './axiosInstance';

@@ -1,4 +1,3 @@
-// src/components/UserDetail.js
 import React, { useState, useEffect } from 'react';
 import axiosInstance from './axiosInstance'; 
 import { useParams, Link } from 'react-router-dom';

@@ -5,7 +5,7 @@ import { useNavigate } from "react-router-dom";
 export default function Login() {
   const [credentials, setCredentials] = useState({ username: "", password: "" });
   const [error, setError] = useState(null);
-  const { loginUser } = useAuth(); // Берём loginUser из контекста
+  const { loginUser } = useAuth(); 
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {

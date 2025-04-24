@@ -11,20 +11,20 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor  // Конструктор без параметров для JPA
 @AllArgsConstructor // Дополнительный конструктор для работы с @Builder
 @Builder
-@Table(name = "friends")
-public class Friends {
+@Table(name = "contacts")
+public class Contacts {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User user;
+    @JoinColumn(name = "sender_id", nullable = false)
+    private User sender;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "friend_id", nullable = false)
-    private User friend;
+    @JoinColumn(name = "receiver_id", nullable = false)
+    private User receiver;
 
     @Column(nullable = false)
     private String status;

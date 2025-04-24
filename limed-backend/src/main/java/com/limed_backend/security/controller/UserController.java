@@ -1,17 +1,14 @@
 package com.limed_backend.security.controller;
 
-import com.limed_backend.security.dto.Responses.FriendResponse;
-import com.limed_backend.security.dto.Responses.TokenResponse;
+import com.limed_backend.security.dto.Responses.*;
 import com.limed_backend.security.dto.Requests.UpdateEmailRequest;
 import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
 import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
-import com.limed_backend.security.dto.Responses.UserProfileResponse;
-import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.ResourceNotFoundException;
-import com.limed_backend.security.repository.FriendRepository;
+import com.limed_backend.security.repository.ContactsRepository;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AuthService;
+import com.limed_backend.security.service.ContactsService;
 import com.limed_backend.security.service.TokenService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -23,7 +20,6 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/user")
@@ -33,13 +29,15 @@ public class UserController {
     private final PasswordEncoder passwordEncoder;
 
     @Autowired
+    private ContactsService contactsService;
+    @Autowired
     private AuthService authService;
     @Autowired
     private UserService userService;
     @Autowired
     private TokenService tokenService;
     @Autowired
-    private FriendRepository friendRepository;
+    private ContactsRepository contactsRepository;
 
     public UserController(UserRepository userRepository,
                           PasswordEncoder passwordEncoder) {
@@ -76,37 +74,70 @@ public class UserController {
         return ResponseEntity.ok(resultMessage);
     }
 
-    @GetMapping("/friends")
-    public ResponseEntity<List<FriendResponse>> getAcceptedFriends(Authentication authentication) {
-        List<FriendResponse> friends = userService.getAcceptedFriends(authentication);
+    @GetMapping("/contacts")
+    public ResponseEntity<List<ContactsResponse>> getContacts(Authentication authentication) {
+        List<ContactsResponse> friends = contactsService.getContacts(authentication);
         return ResponseEntity.ok(friends);
     }
 
-    @PostMapping("/add-friend/{id}")
-    public ResponseEntity<String> addFriend(Authentication authentication,
+    @GetMapping("/contacts/pending")
+    public ResponseEntity<List<ContactsPendingResponse>> getPendingContacts(Authentication authentication) {
+        List<ContactsPendingResponse> pendingFriends = contactsService.getPendingContacts(authentication);
+        return ResponseEntity.ok(pendingFriends);
+    }
+
+    @GetMapping("/contacts/invitation")
+    public ResponseEntity<List<ContactsPendingResponse>> getInvitationContacts(Authentication authentication) {
+        List<ContactsPendingResponse> invitationFriends = contactsService.getInvitationContacts(authentication);
+        return ResponseEntity.ok(invitationFriends);
+    }
+
+    @GetMapping("/contacts/ignore")
+    public ResponseEntity<List<ContactsPendingResponse>> getIgnoreList(Authentication authentication) {
+        List<ContactsPendingResponse> invitationFriends = contactsService.getIgnoreList(authentication);
+        return ResponseEntity.ok(invitationFriends);
+    }
+
+    @PostMapping("/add-contacts/{id}")
+    public ResponseEntity<String> addContacts(Authentication authentication,
                                             @PathVariable Long id){
-        String resultMessage = userService.addFriend(authentication, id);
+        String resultMessage = contactsService.addContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
 
-    @PostMapping("/accept-friend/{id}")
-    public ResponseEntity<String> acceptFriend(Authentication authentication,
+    @PostMapping("/accept-contacts/{id}")
+    public ResponseEntity<String> acceptContacts(Authentication authentication,
                                                @PathVariable Long id){
-        String resultMessage = userService.acceptFriend(authentication, id);
+        String resultMessage = contactsService.acceptContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
 
-    @DeleteMapping("/cansel-friend/{id}")
-    public ResponseEntity<String> canselFriend(Authentication authentication,
+    @DeleteMapping("/cansel-contacts/{id}")
+    public ResponseEntity<String> canselContacts(Authentication authentication,
                                                @PathVariable Long id){
-        String resultMessage = userService.canselFriend(authentication, id);
+        String resultMessage = contactsService.cancelContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
 
-    @DeleteMapping("/delete-friend/{id}")
-    public ResponseEntity<String> deleteFriend(Authentication authentication,
+    @DeleteMapping("/delete-contacts/{id}")
+    public ResponseEntity<String> deleteContacts(Authentication authentication,
                                                 @PathVariable Long id){
-        String resultMessage = userService.deleteFriend(authentication, id);
+        String resultMessage = contactsService.deleteContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
+
+    @PostMapping("/ignore/{id}")
+    public ResponseEntity<String> addContactsIgnore(Authentication authentication,
+                                                    @PathVariable Long id){
+        String resultMessage = contactsService.addIgnore(authentication, id);
+        return ResponseEntity.ok(resultMessage);
+    }
+
+    @DeleteMapping("/delete-ignore/{id}")
+    public ResponseEntity<String> deleteIgnore(Authentication authentication,
+                                               @PathVariable Long id){
+        String resultMessage = contactsService.deleteIgnore(authentication, id);
+        return ResponseEntity.ok(resultMessage);
+    }
+
 }

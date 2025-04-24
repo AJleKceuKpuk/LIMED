@@ -1,5 +1,5 @@
 import axios from "axios";
-import { jwtDecode } from "jwt-decode"; // Расшифровка токена для проверки истечения срока действия
+import { jwtDecode } from "jwt-decode"; 
 
 // Создаём базовый экземпляр Axios
 const api = axios.create({
