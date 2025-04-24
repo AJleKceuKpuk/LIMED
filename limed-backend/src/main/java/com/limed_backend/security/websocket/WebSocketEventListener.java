@@ -2,7 +2,7 @@ package com.limed_backend.security.websocket;
 
 import com.limed_backend.security.service.ConnectionService;
 import com.limed_backend.security.service.UserService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;
 import org.springframework.messaging.simp.stomp.StompHeaderAccessor;
 import org.springframework.stereotype.Component;
@@ -11,30 +11,28 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 import java.time.LocalDateTime;
 
 @Component
+@RequiredArgsConstructor
 public class WebSocketEventListener {
 
-    @Autowired
-    private UserService userService;
-
-    @Autowired
-    private ConnectionService connectionService;
+    private final UserService userService;
+    private final ConnectionService connectionService;
 
     @EventListener
     public void handleSessionDisconnect(SessionDisconnectEvent event) {
         StompHeaderAccessor headerAccessor = StompHeaderAccessor.wrap(event.getMessage());
 
         // Пытаемся извлечь сначала из атрибутов
-        Object userIdObj = headerAccessor.getSessionAttributes() != null
-                ? headerAccessor.getSessionAttributes().get("userId")
-                : null;
-        if (userIdObj == null && headerAccessor.getUser() != null) {
+        headerAccessor.getSessionAttributes();
+        Object userIdObj = headerAccessor.getSessionAttributes().get("userId");
+        if (userIdObj == null) {
+            headerAccessor.getUser();
             userIdObj = headerAccessor.getUser().getName();
         }
 
         if (userIdObj != null) {
             try {
                 Long userId = Long.parseLong(userIdObj.toString());
-                userService.updateOnlineStatus(userId, "offline");
+                userService.updateUserStatus(userId, "offline");
                 userService.updateLastActivity(userId, LocalDateTime.now());
                 connectionService.removeUser(userId);
             } catch (NumberFormatException e) {

@@ -17,7 +17,7 @@ public class DataInitializerRoles implements CommandLineRunner {
     }
 
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args) {
         if (roleRepository.count() == 0) {
             Role userRole = Role.builder().id(1L).name("USER").build();
             Role adminRole = Role.builder().id(2L).name("ADMIN").build();

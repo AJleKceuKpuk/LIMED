@@ -36,7 +36,7 @@ public class Blocking {
     private boolean revokedBlock;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "revoked_by_id", nullable = true)
+    @JoinColumn(name = "revoked_by_id")
     private User revokedBy;
 
     @ManyToOne(fetch = FetchType.LAZY)

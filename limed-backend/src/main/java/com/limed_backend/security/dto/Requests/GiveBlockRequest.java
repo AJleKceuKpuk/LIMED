@@ -1,11 +1,7 @@
 package com.limed_backend.security.dto.Requests;
 
-import com.limed_backend.security.entity.User;
 import lombok.Data;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 @Data
 public class GiveBlockRequest {

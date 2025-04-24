@@ -10,14 +10,8 @@ import java.util.Optional;
 @Repository
 public interface ContactsRepository extends JpaRepository<Contacts, Long> {
 
-    // Находит связь между пользователями по направлению: sender и receiver
-    Optional<Contacts> findBySender_IdAndReceiver_Id(Long senderId, Long receiverId);
-
     // Находит связь между пользователями с учетом статуса, например, "Accepted" или "Ignored"
     Optional<Contacts> findBySender_IdAndReceiver_IdAndStatus(Long senderId, Long receiverId, String status);
-
-    // Выбирает все контакты, где текущий пользователь является либо отправителем, либо получателем с указанным статусом
-    List<Contacts> findBySender_IdAndStatusOrReceiver_IdAndStatus(Long senderId, String status1, Long receiverId, String status2);
 
     // Выбирает контакты по отправителю (исходящие запросы) с заданным статусом
     List<Contacts> findBySender_IdAndStatus(Long senderId, String status);

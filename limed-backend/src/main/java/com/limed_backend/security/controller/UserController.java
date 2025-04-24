@@ -5,45 +5,24 @@ import com.limed_backend.security.dto.Requests.UpdateEmailRequest;
 import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
 import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.repository.ContactsRepository;
-import com.limed_backend.security.repository.UserRepository;
-import com.limed_backend.security.service.AuthService;
 import com.limed_backend.security.service.ContactsService;
-import com.limed_backend.security.service.TokenService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
 @RequestMapping("/user")
+@RequiredArgsConstructor
 public class UserController {
 
-    private final UserRepository userRepository;
-    private final PasswordEncoder passwordEncoder;
-
-    @Autowired
-    private ContactsService contactsService;
-    @Autowired
-    private AuthService authService;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private TokenService tokenService;
-    @Autowired
-    private ContactsRepository contactsRepository;
-
-    public UserController(UserRepository userRepository,
-                          PasswordEncoder passwordEncoder) {
-        this.userRepository = userRepository;
-        this.passwordEncoder = passwordEncoder;
-    }
+    private final ContactsService contactsService;
+    private final UserService userService;
 
 
     @GetMapping("/profile")

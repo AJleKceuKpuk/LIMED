@@ -10,13 +10,7 @@ import java.util.List;
 @Repository
 public interface TokenRepository extends JpaRepository<Token, Long> {
 
-    List<Token> findByRevokedFalseAndExpirationAfter(Date now);
-
     Token findByJti(String jti);
-
-    List<Token> findByRevokedTrue();
-
-    List<Token> findByRevokedTrueAndRevokedAtAfter(Date revokedAt);
 
     // Метод для удаления старых токенов
     int deleteAllByExpirationBefore(Date now);

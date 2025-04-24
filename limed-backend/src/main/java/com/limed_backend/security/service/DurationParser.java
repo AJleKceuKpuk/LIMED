@@ -12,13 +12,13 @@ public class DurationParser {
         if (matcher.matches()) {
             long amount = Long.parseLong(matcher.group(1));
             String unit = matcher.group(2).toLowerCase();
-            switch (unit) {
-                case "s": return Duration.ofSeconds(amount);
-                case "m": return Duration.ofMinutes(amount);
-                case "h": return Duration.ofHours(amount);
-                case "d": return Duration.ofDays(amount);
-                default: throw new IllegalArgumentException("Неподдерживаемая единица измерения: " + unit);
-            }
+            return switch (unit) {
+                case "s" -> Duration.ofSeconds(amount);
+                case "m" -> Duration.ofMinutes(amount);
+                case "h" -> Duration.ofHours(amount);
+                case "d" -> Duration.ofDays(amount);
+                default -> throw new IllegalArgumentException("Неподдерживаемая единица измерения: " + unit);
+            };
         } else {
             throw new IllegalArgumentException("Неправильный формат длительности. Пример корректного ввода: \"1h\", \"30m\", \"2d\"");
         }

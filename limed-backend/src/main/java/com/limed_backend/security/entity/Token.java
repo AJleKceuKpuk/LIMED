@@ -2,12 +2,14 @@ package com.limed_backend.security.entity;
 
 import jakarta.persistence.*;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.Date;
 
 @Entity
 @Data
 @Table(name = "tokens")
+@NoArgsConstructor
 public class Token {
 
     @Id
@@ -50,9 +52,6 @@ public class Token {
         this.revoked = false;
         this.revokedAt = null;
         this.ipAddress = ipAddress;
-    }
-
-    public Token() {
     }
 
     public void setRevoked(Boolean revoked) {

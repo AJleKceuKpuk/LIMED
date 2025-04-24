@@ -6,7 +6,8 @@ import com.limed_backend.security.entity.User;
 import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AdminService;
-import org.springframework.beans.factory.annotation.Autowired;
+import com.limed_backend.security.service.UserService;
+import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -16,14 +17,14 @@ import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
+@RequiredArgsConstructor
 public class AdminController {
 
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserMapper userMapper;
-    @Autowired
-    private AdminService adminService;
+
+    private final UserRepository userRepository;
+    private final UserMapper userMapper;
+    private final AdminService adminService;
+    private final UserService userService;
 
     @GetMapping("/get-allusers")
     public List<UserResponse> getAllUsers() {
@@ -35,7 +36,8 @@ public class AdminController {
 
     @GetMapping("/get-user/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        UserResponse userResponse = adminService.getUserById(id);
+        User user = userService.findUserById(id);
+        UserResponse userResponse = userMapper.toUserResponse(user);
         return ResponseEntity.ok(userResponse);
     }
 

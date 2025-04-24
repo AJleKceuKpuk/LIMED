@@ -1,50 +1,33 @@
 package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Requests.*;
-import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
-import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.BlockingRepository;
 import com.limed_backend.security.repository.RoleRepository;
 import com.limed_backend.security.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.*;
 
 @Service
+@RequiredArgsConstructor
 public class AdminService {
 
-    @Autowired
-    private UserRepository userRepository;
-    @Autowired
-    private UserMapper userMapper;
-    @Autowired
-    private AuthService authService;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private RoleRepository roleRepository;
-    @Autowired
-    private BlockingRepository blockingRepository;
-
-    //поиск пользователя по ID
-    public UserResponse getUserById(Long id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь с id  " + id + " не найден"));
-        return userMapper.toUserResponse(user);
-    }
+    private final UserRepository userRepository;
+    private final UserService userService;
+    private final RoleRepository roleRepository;
+    private final BlockingRepository blockingRepository;
 
     // изменение имени пользователя принудительно
     public String editUsername(UpdateUsernameRequest request, Long id){
-        User user = userService.findUserbyId(id);
-        authService.validateUsername(request.getNewUsername());
+        User user = userService.findUserById(id);
+        userService.validateUsernameAvailability(request.getNewUsername());
         user.setUsername(request.getNewUsername());
         userRepository.save(user);
         return "Имя игрока изменено";
@@ -52,8 +35,8 @@ public class AdminService {
 
     // изменение почты пользователя принудительно
     public String editEmail(UpdateEmailRequest request, Long id){
-        User user = userService.findUserbyId(id);
-        authService.validateEmailAvailability(request.getNewEmail());
+        User user = userService.findUserById(id);
+        userService.validateEmailAvailability(request.getNewEmail());
         user.setEmail(request.getNewEmail());
         userRepository.save(user);
         return "Email игрока сохранен";
@@ -61,7 +44,7 @@ public class AdminService {
 
     // редактировать Роли пользователя
     public String editRole(UpdateRoleRequest request, Long id) {
-        User user = userService.findUserbyId(id);
+        User user = userService.findUserById(id);
         Set<Role> newRoles = new HashSet<>();
         for (String roleName : request.getRoles()) {
             Role role = roleRepository.findByName(roleName)
@@ -75,17 +58,20 @@ public class AdminService {
 
     // выдать блокировку пользователя
     public String giveBlock(GiveBlockRequest request, Authentication authentication) {
+        User admin = userService.findUserByUsername(authentication.getName());
         User user = userService.findUserByUsername(request.getUsername());
+
         LocalDateTime startTime = LocalDateTime.now();
         Duration duration = DurationParser.parseDuration(request.getDuration());
         LocalDateTime endTime = startTime.plus(duration);
+
         Blocking block = Blocking.builder()
                 .blockingType(request.getBlockingType())
                 .startTime(startTime)
                 .endTime(endTime)
                 .reason(request.getReason())
                 .user(user)
-                .blockedBy(userService.findUserByUsername(authentication.getName()))
+                .blockedBy(admin)
                 .build();
         blockingRepository.save(block);
         return "Пользователь " + user.getUsername() + " заблокирован до " + endTime;
@@ -94,24 +80,19 @@ public class AdminService {
     // снять блокировку пользователя
     public String unblock(UnblockRequest request, Authentication authentication) {
         User user = userService.findUserByUsername(request.getUsername());
-        User unblockingAdmin = userService.findUserByUsername(authentication.getName());
-
+        User admin = userService.findUserByUsername(authentication.getName());
         List<Blocking> activeBlocks = blockingRepository
                 .findByUserAndBlockingTypeAndRevokedBlockFalse(user, request.getBlockingType());
-
         if (activeBlocks.isEmpty()) {
             return "Нет активных блокировок типа " + request.getBlockingType()
                     + " для пользователя " + user.getUsername();
         }
-
         activeBlocks.forEach(block -> {
             block.setRevokedBlock(true);
-            block.setRevokedBy(unblockingAdmin);
+            block.setRevokedBy(admin);
         });
-
         blockingRepository.saveAll(activeBlocks);
-
-        return "Пользователь " + user.getUsername() + " разблокирован для типа ";
+        return "Пользователь " + user.getUsername() + " разблокирован для типа " + request.getBlockingType();
     }
 
 }

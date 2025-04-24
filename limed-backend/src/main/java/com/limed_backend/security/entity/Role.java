@@ -18,7 +18,6 @@ public class Role {
     //@GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    // Имя роли, например, "USER" или "ADMIN"
     @Column(nullable = false, unique = true)
     private String name;
 }

@@ -2,9 +2,7 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Requests.UserStatusRequest;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.messaging.simp.user.SimpUserRegistry;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 
@@ -17,12 +15,9 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ConnectionService {
 
     private final Map<Long, Long> userLastActivity = new ConcurrentHashMap<>();
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
-    @Autowired
-    private UserService userService;
-    @Autowired
-    private SimpUserRegistry simpUserRegistry;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final UserService userService;
+
 
     //Добавляем дату последней активности, и имя пользователя в Map
     public void updateLastUserActivity(Long userId) {
@@ -34,7 +29,6 @@ public class ConnectionService {
         userLastActivity.remove(userId);
     }
 
-
     //Запускается раз в 30 секунд
     @Scheduled(fixedDelay = 30000)
     public void activityCheck() {
@@ -43,7 +37,7 @@ public class ConnectionService {
 
         userLastActivity.forEach((userId, lastActivityMillis) -> { //проходим по всей Map и смотрим юзера на последнюю активность
             if (currentTime - lastActivityMillis > inactivityThreshold) {
-                userService.updateOnlineStatus(userId, "away");
+                userService.updateUserStatus(userId, "away");
                 LocalDateTime recordedLastActivity = java.time.Instant
                         .ofEpochMilli(lastActivityMillis)
                         .atZone(java.time.ZoneId.systemDefault())
