@@ -120,7 +120,7 @@ public class JwtCore {
             }
         }
         try {
-            Claims claims = getClaims(token);
+            getClaims(token);
         } catch (Exception ex) {
             throw new JwtException("Invalid or expired " + (typeToken != null ? typeToken : "token")
                     + ": " + ex.getMessage(), ex);
