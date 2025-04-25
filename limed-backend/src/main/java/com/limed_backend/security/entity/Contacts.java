@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 
 @Entity
 @Data
-@NoArgsConstructor  // Конструктор без параметров для JPA
-@AllArgsConstructor // Дополнительный конструктор для работы с @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 @Builder
 @Table(name = "contacts")
 public class Contacts {

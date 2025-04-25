@@ -1,7 +1,5 @@
 package com.limed_backend.security.config;
 
-import com.limed_backend.security.repository.BlockingRepository;
-import com.limed_backend.security.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -9,7 +7,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import com.limed_backend.security.entity.Token;
 import com.limed_backend.security.repository.TokenRepository;
 import com.limed_backend.security.service.ImplUserDetailsService;
-import lombok.RequiredArgsConstructor;
+import lombok.AllArgsConstructor;
+import lombok.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -22,7 +21,8 @@ import java.io.IOException;
 import java.util.Date;
 
 
-@RequiredArgsConstructor
+
+@AllArgsConstructor
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
     @Autowired
@@ -32,16 +32,13 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private TokenRepository tokenRepository;
 
-    @Autowired
-    private UserService userService;
+    public JwtAuthenticationFilter() {
 
-    @Autowired
-    private BlockingRepository blockingRepository;
-;
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain filterChain)
+    }
+
+    protected void doFilterInternal(@NonNull HttpServletRequest request,
+                                    @NonNull HttpServletResponse response,
+                                    @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         // Если запрос идёт на эндпоинт обновления токена, пропускаем проверку
         if ("/token/refresh".equals(request.getServletPath())) {

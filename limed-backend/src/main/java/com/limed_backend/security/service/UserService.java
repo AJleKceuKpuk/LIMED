@@ -64,7 +64,7 @@ public class UserService {
 
     // Проверка доступности имени
     public void validateUsernameAvailability(String newUsername) {
-        Optional<User> userExists = userRepository.findByUsername(newUsername);
+        Optional<User> userExists = userRepository.findByUsernameIgnoreCase(newUsername);
         if (userExists.isPresent()) {
             throw new UsernameAlreadyExistsException();
         }
