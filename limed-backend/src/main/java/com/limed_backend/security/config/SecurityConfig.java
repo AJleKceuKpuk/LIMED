@@ -75,8 +75,8 @@ public class SecurityConfig {
                 // остальные настройки...
                 .authorizeHttpRequests(authorize -> authorize
                         .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                        .requestMatchers("/start", "/login", "/ws/**", "/registration", "/token/**", "/logout").permitAll()
-                        .requestMatchers("/game", "/user/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/start", "/login", "/registration",  "/logout").permitAll()
+                        .requestMatchers("/game", "/user/**", "/chats/**", "/ws/**", "/token/**").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                         .anyRequest().authenticated()
                 )
