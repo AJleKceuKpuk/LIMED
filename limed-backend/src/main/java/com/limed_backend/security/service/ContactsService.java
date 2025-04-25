@@ -24,7 +24,7 @@ public class ContactsService {
     private final ContactsMapper contactsMapper;
 
     // Поиск принятой дружбы между пользователями (проверяем обе стороны)
-    private Optional<Contacts> findAcceptedContacts(Long senderId, Long receiverId) {
+    public Optional<Contacts> findAcceptedContacts(Long senderId, Long receiverId) {
         return contactsRepository.findBySender_IdAndReceiver_IdAndStatus(senderId, receiverId, "Accepted")
                 .or(() -> contactsRepository.findBySender_IdAndReceiver_IdAndStatus(receiverId, senderId, "Accepted"));
     }

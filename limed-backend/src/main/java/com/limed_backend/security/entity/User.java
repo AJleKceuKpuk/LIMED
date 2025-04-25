@@ -3,7 +3,6 @@ package com.limed_backend.security.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -17,6 +16,7 @@ import java.util.Set;
 @AllArgsConstructor
 @Builder
 public class User {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -57,5 +57,15 @@ public class User {
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Contacts> contactsReceiver = new ArrayList<>();
 
-}
+    // Чаты, в которых участвует пользователь.
+    @ManyToMany(mappedBy = "users")
+    private List<Chats> chats = new ArrayList<>();
 
+    // Сообщения, отправленные пользователем.
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Messages> sentMessages = new ArrayList<>();
+
+    // Сообщения, которые пользователь просмотрел (обратная сторона связи из Messages.viewedBy).
+    @ManyToMany(mappedBy = "viewedBy")
+    private List<Messages> viewedMessages = new ArrayList<>();
+}
