@@ -23,7 +23,6 @@ public class ContactsService {
     private final ContactsRepository contactsRepository;
     private final ContactsMapper contactsMapper;
 
-
     //список всех контактов пользователя
     public List<Contacts> findAcceptedContacts(Long senderId, Long receiverId) {
         List<Contacts> contacts = contactsRepository.
@@ -34,14 +33,14 @@ public class ContactsService {
         return null;
     }
 
-    //проверка что дружба реально существует
+    //проверка, что дружба реально существует
     public boolean isAcceptedContacts(Long senderId, Long receiverId){
         return findContactsStatus(senderId, receiverId, "Accepted").isPresent() ||
                 findContactsStatus(receiverId, senderId, "Accepted").isPresent();
     }
 
-    // Поиск приглашения на дружбу со статусом "Pending" (проверяем направление, т.е. кто отправил запрос)
-    private Optional<Contacts> findContactsStatus(Long senderId, Long receiverId, String status) {
+    // Поиск дружбы со статусом
+    public Optional<Contacts> findContactsStatus(Long senderId, Long receiverId, String status) {
         return contactsRepository.findBySender_IdAndReceiver_IdAndStatus(senderId, receiverId, status);
     }
 

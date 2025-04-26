@@ -42,7 +42,9 @@ public class Messages {
             joinColumns = @JoinColumn(name = "message_id"),
             inverseJoinColumns = @JoinColumn(name = "user_id")
     )
+    @Builder.Default
     private List<User> viewedBy = new ArrayList<>();
+
 
     // Дополнительные метаданные в формате JSON (например, информация о вложениях, реакциях и т.д.).
     //

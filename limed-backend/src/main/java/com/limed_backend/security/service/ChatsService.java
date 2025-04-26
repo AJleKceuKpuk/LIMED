@@ -33,46 +33,49 @@ public class ChatsService {
                 .orElseThrow(() -> new ResourceNotFoundException("Чат не найден"));
     }
 
-    // подготовка ответа
-    public ChatResponse getChatResponse(Chats chat){
-        ChatResponse response = new ChatResponse();
-
-        List<String> userName = chat.getUsers().stream()
-                .map(User::getUsername)
-                .collect(Collectors.toList());
-
-        response.setId(chat.getId());
-        response.setName(chat.getName());
-        response.setUsername(userName);
-        response.setStatus(chat.getStatus());
-        return response;
-    }
-
     // Проверка, что пользователь является создателем чата
     private void checkCreator(User currentUser, Chats chat) {
-        if (!chat.getCreatorId().equals(currentUser.getId())) {
-            throw new RuntimeException("Только создатель чата может выполнять эту операцию");
+        boolean isCreator = chat.getCreatorId().equals(currentUser.getId());
+        boolean isAdmin = currentUser.getRoles().stream()
+                .anyMatch(role -> "ADMIN".equals(role.getName()));
+        if (!isCreator && !isAdmin) {
+            throw new RuntimeException("Только создатель чата или администратор могут выполнять эту операцию");
         }
     }
 
+    //Выдать все чаты пользователя
     public List<ChatResponse> getChats(Authentication authentication) {
         User currentUser = userService.findUserByUsername(authentication.getName());
-
         List<Chats> activeChats = chatRepository.findByUsersContainingAndStatus(currentUser, "Active");
-
         return activeChats.stream()
-                .map(chat -> chatsMapper.toChatResponse(chat, currentUser.getId()))
+                .map(chatsMapper::toChatResponse)
+                .collect(Collectors.toList());
+    }
+
+    // Показать список чатов для Администратора!
+    public List<ChatResponse> getAllChats(Authentication authentication) {
+        User user = userService.findUserByUsername(authentication.getName());
+        List<Chats> allChats = chatRepository.findAll();
+        return allChats.stream()
+                .map(chatsMapper::toChatResponse)
                 .collect(Collectors.toList());
     }
 
     // создание чата
     public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
         User creator = userService.findUserByUsername(authentication.getName());
+        System.out.println(creator.getUsername());
         List<User> users = new ArrayList<>();
+        System.out.println(request.getUsersId());
         if (request.getUsersId() != null) {
+            System.out.println(request.getUsersId());
             for (Long userId : request.getUsersId()) {
+                System.out.println(userId);
                 User user = userService.findUserById(userId);
-                if (contactsService.isAcceptedContacts(creator.getId(), userId)){
+                System.out.println("User found");
+                if (contactsService.findContactsStatus(userId, creator.getId(),  "Ignore").isEmpty() &&
+                        contactsService.isAcceptedContacts(creator.getId(), userId)){
+                    System.out.println("User add");
                     users.add(user);
                 }
             }
@@ -88,7 +91,7 @@ public class ChatsService {
                 .build();
 
         chatRepository.save(chat);
-        return getChatResponse(chat);
+        return chatsMapper.toChatResponse(chat);
     }
 
     // переименовывание чата
@@ -98,7 +101,7 @@ public class ChatsService {
         checkCreator(currentUser, chat);
         chat.setName(request.getNewName());
         chatRepository.save(chat);
-        return getChatResponse(chat);
+        return chatsMapper.toChatResponse(chat);
     }
 
     // добавление пользователей в чат
@@ -143,7 +146,7 @@ public class ChatsService {
             }
             chat.setUsers(currentParticipants);
             chatRepository.save(chat);
-            return getChatResponse(chat);
+            return chatsMapper.toChatResponse(chat);
         }
     }
 
@@ -169,9 +172,10 @@ public class ChatsService {
 
         chat.setUsers(users);
         chatRepository.save(chat);
-        return getChatResponse(chat);
+        return chatsMapper.toChatResponse(chat);
     }
 
+    //Деактивировать чат (может только создатель чата)
     public ChatResponse deactivateChat(Authentication authentication, Long id){
         User currentUser = userService.findUserByUsername(authentication.getName());
         Chats chat = getChatById(id);
@@ -179,16 +183,16 @@ public class ChatsService {
         checkCreator(currentUser, chat);
         chat.setStatus("Deleted");
         chatRepository.save(chat);
-        return getChatResponse(chat);
+        return chatsMapper.toChatResponse(chat);
     }
 
+    //Активировать чат (может только Администратор)
     public ChatResponse activatedChat(Authentication authentication, Long id){
         User currentUser = userService.findUserByUsername(authentication.getName());
         Chats chat = getChatById(id);
-
         checkCreator(currentUser, chat);
         chat.setStatus("Active");
         chatRepository.save(chat);
-        return getChatResponse(chat);
+        return chatsMapper.toChatResponse(chat);
     }
 }

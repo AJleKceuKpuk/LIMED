@@ -1,11 +1,14 @@
 package com.limed_backend.security.controller;
 
 import com.limed_backend.security.dto.Requests.*;
+import com.limed_backend.security.dto.Responses.ChatResponse;
 import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.User;
+import com.limed_backend.security.mapper.ChatsMapper;
 import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AdminService;
+import com.limed_backend.security.service.ChatsService;
 import com.limed_backend.security.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -25,6 +28,7 @@ public class AdminController {
     private final UserMapper userMapper;
     private final AdminService adminService;
     private final UserService userService;
+    private final ChatsService chatsService;
 
     @GetMapping("/get-allusers")
     public List<UserResponse> getAllUsers() {
@@ -75,4 +79,30 @@ public class AdminController {
         String result = adminService.unblock(request, authentication);
         return ResponseEntity.ok(result);
     }
+
+    @GetMapping("/chats")
+    public List<ChatResponse> getAllChats(Authentication authentication){
+        return chatsService.getAllChats(authentication);
+    }
+
+    @PostMapping("/chats/activate/{id}")
+    public ChatResponse activateChat(Authentication authentication,
+                                            @PathVariable Long id){
+        return chatsService.activatedChat(authentication, id);
+    }
+
+    @PostMapping("/chats/deactivate/{id}")
+    public ResponseEntity<ChatResponse> removeChat(Authentication authentication,
+                                                   @PathVariable Long id){
+        ChatResponse chat = chatsService.deactivateChat(authentication, id);
+        return ResponseEntity.ok(chat);
+    }
+
+    @PostMapping("/chats/rename")
+    public ResponseEntity<ChatResponse> renameChat(Authentication authentication,
+                                                   @RequestBody RenameChatRequest request){
+        ChatResponse chat = chatsService.renameChat(authentication, request);
+        return ResponseEntity.ok(chat);
+    }
+
 }

@@ -13,13 +13,12 @@ import java.util.stream.Collectors;
 public interface ChatsMapper {
 
     @Named("toChatResponse")
-    default ChatResponse toChatResponse(Chats chat, Long currentUserId) {
+    default ChatResponse toChatResponse(Chats chat) {
         ChatResponse response = new ChatResponse();
         response.setId(chat.getId());
         response.setName(chat.getName());
 
         List<String> usernames = chat.getUsers().stream()
-                .filter(user -> !user.getId().equals(currentUserId))
                 .map(User::getUsername)
                 .collect(Collectors.toList());
 
