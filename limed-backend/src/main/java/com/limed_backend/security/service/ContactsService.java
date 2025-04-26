@@ -24,6 +24,7 @@ public class ContactsService {
     private final ContactsMapper contactsMapper;
 
 
+    //список всех контактов пользователя
     public List<Contacts> findAcceptedContacts(Long senderId, Long receiverId) {
         List<Contacts> contacts = contactsRepository.
                 findBySender_IdAndStatusOrReceiver_IdAndStatus(senderId,"Accepted",receiverId,"Accepted");
@@ -33,6 +34,7 @@ public class ContactsService {
         return null;
     }
 
+    //проверка что дружба реально существует
     public boolean isAcceptedContacts(Long senderId, Long receiverId){
         return findContactsStatus(senderId, receiverId, "Accepted").isPresent() ||
                 findContactsStatus(receiverId, senderId, "Accepted").isPresent();

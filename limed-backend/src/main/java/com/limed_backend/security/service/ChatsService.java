@@ -72,7 +72,7 @@ public class ChatsService {
         if (request.getUsersId() != null) {
             for (Long userId : request.getUsersId()) {
                 User user = userService.findUserById(userId);
-                if (contactsService.findAcceptedContacts(creator.getId(), userId) != null){
+                if (contactsService.isAcceptedContacts(creator.getId(), userId)){
                     users.add(user);
                 }
             }
@@ -121,7 +121,7 @@ public class ChatsService {
                 for (Long userId : request.getUsersId()) {
 
                     if (!participantsIds.contains(userId)) {
-                        if (contactsService.findAcceptedContacts(currentUser.getId(), userId) != null) {
+                        if (contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
                             participantsIds.add(userId);
                         }
                     }
@@ -136,7 +136,7 @@ public class ChatsService {
                 boolean exists = currentParticipants.stream().anyMatch(u -> u.getId().equals(userId));
                 if (!exists) {
                     User user = userService.findUserById(userId);
-                    if (contactsService.findAcceptedContacts(currentUser.getId(), userId) != null) {
+                    if (contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
                         currentParticipants.add(user);
                     }
                 }
