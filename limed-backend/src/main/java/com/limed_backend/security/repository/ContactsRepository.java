@@ -18,4 +18,9 @@ public interface ContactsRepository extends JpaRepository<Contacts, Long> {
 
     // Выбирает контакты по получателю (входящие запросы) с заданным статусом
     List<Contacts> findByReceiver_IdAndStatus(Long receiverId, String status);
+
+    //Возвращает список контактов пользователя, что подтверждены
+    List<Contacts> findBySender_IdAndStatusOrReceiver_IdAndStatus(Long senderId, String status1, Long receiverId, String status2);
+
+
 }

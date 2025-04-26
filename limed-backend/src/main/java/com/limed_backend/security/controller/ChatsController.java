@@ -11,12 +11,19 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Controller
 @RequestMapping("/chats")
 @RequiredArgsConstructor
 public class ChatsController {
 
     private final ChatsService chatsService;
+
+    @GetMapping("/all")
+    public List<ChatResponse> getChats(Authentication authentication){
+        return chatsService.getChats(authentication);
+    }
 
     @PostMapping("/create")
     public ResponseEntity<ChatResponse> createChat(Authentication authentication,

@@ -7,6 +7,7 @@ import com.limed_backend.security.dto.Responses.ChatResponse;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.mapper.ChatsMapper;
 import com.limed_backend.security.repository.ChatsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -24,6 +25,7 @@ public class ChatsService {
     private final ChatsRepository chatRepository;
     private final UserService userService;
     private final ContactsService contactsService;
+    private final ChatsMapper chatsMapper;
 
     // поиск чата по Id
     public Chats getChatById(Long id){
@@ -53,6 +55,16 @@ public class ChatsService {
         }
     }
 
+    public List<ChatResponse> getChats(Authentication authentication) {
+        User currentUser = userService.findUserByUsername(authentication.getName());
+
+        List<Chats> activeChats = chatRepository.findByUsersContainingAndStatus(currentUser, "Active");
+
+        return activeChats.stream()
+                .map(chat -> chatsMapper.toChatResponse(chat, currentUser.getId()))
+                .collect(Collectors.toList());
+    }
+
     // создание чата
     public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
         User creator = userService.findUserByUsername(authentication.getName());
@@ -60,7 +72,7 @@ public class ChatsService {
         if (request.getUsersId() != null) {
             for (Long userId : request.getUsersId()) {
                 User user = userService.findUserById(userId);
-                if (contactsService.findAcceptedContacts(creator.getId(), userId).isPresent()){
+                if (contactsService.findAcceptedContacts(creator.getId(), userId) != null){
                     users.add(user);
                 }
             }
@@ -109,7 +121,7 @@ public class ChatsService {
                 for (Long userId : request.getUsersId()) {
 
                     if (!participantsIds.contains(userId)) {
-                        if (contactsService.findAcceptedContacts(currentUser.getId(), userId).isPresent()) {
+                        if (contactsService.findAcceptedContacts(currentUser.getId(), userId) != null) {
                             participantsIds.add(userId);
                         }
                     }
@@ -124,7 +136,7 @@ public class ChatsService {
                 boolean exists = currentParticipants.stream().anyMatch(u -> u.getId().equals(userId));
                 if (!exists) {
                     User user = userService.findUserById(userId);
-                    if (contactsService.findAcceptedContacts(currentUser.getId(), userId).isPresent()) {
+                    if (contactsService.findAcceptedContacts(currentUser.getId(), userId) != null) {
                         currentParticipants.add(user);
                     }
                 }
