@@ -13,8 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
@@ -43,6 +42,25 @@ public class ChatsService {
         }
     }
 
+    //Поиск приватного чата исходя из списка пользователей (приватный чат с пустым именем)
+    public Chats getPrivateChat(List<Long> usersId) {
+        Set<Long> requestedUserIds = new HashSet<>(usersId);
+        List<Chats> privateChats = chatRepository.findByNameIsNull();
+
+        Optional<Chats> privateChat = privateChats.stream()
+                .filter(chat -> {
+                    Set<Long> chatUserIds = chat.getUsers()
+                            .stream()
+                            .map(User::getId)
+                            .collect(Collectors.toSet());
+                    boolean isMatch = chatUserIds.equals(requestedUserIds);
+                    return isMatch;
+                })
+                .findFirst();
+        return privateChat.orElse(null);
+    }
+
+
     //Выдать все чаты пользователя
     public List<ChatResponse> getChats(Authentication authentication) {
         User currentUser = userService.findUserByUsername(authentication.getName());
@@ -62,27 +80,94 @@ public class ChatsService {
     }
 
     // создание чата
+//    public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
+//        User creator = userService.findUserByUsername(authentication.getName());
+//        System.out.println(creator.getUsername());
+//        List<User> users = new ArrayList<>();
+//        System.out.println(request.getUsersId());
+//        if (request.getUsersId() != null) {
+//            System.out.println(request.getUsersId());
+//            for (Long userId : request.getUsersId()) {
+//                System.out.println(userId);
+//                User user = userService.findUserById(userId);
+//                System.out.println("User found");
+//                if (contactsService.findContactsStatus(userId, creator.getId(),  "Ignore").isEmpty() &&
+//                        contactsService.isAcceptedContacts(creator.getId(), userId)){
+//                    System.out.println("User add");
+//                    users.add(user);
+//                }
+//            }
+//        }
+//        if (!users.contains(creator)) {
+//            users.add(creator);
+//        }
+//        Chats chat = Chats.builder()
+//                .name(request.getName())
+//                .creatorId(creator.getId())
+//                .status("Active")
+//                .users(users)
+//                .build();
+//
+//        chatRepository.save(chat);
+//        return chatsMapper.toChatResponse(chat);
+//    }
+
     public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
         User creator = userService.findUserByUsername(authentication.getName());
-        System.out.println(creator.getUsername());
-        List<User> users = new ArrayList<>();
-        System.out.println(request.getUsersId());
+        System.out.println("Creator: " + creator.getUsername());
+
+        // Используем Set для устранения дублирования userId
+        Set<Long> providedIds = new HashSet<>();
         if (request.getUsersId() != null) {
-            System.out.println(request.getUsersId());
-            for (Long userId : request.getUsersId()) {
-                System.out.println(userId);
-                User user = userService.findUserById(userId);
-                System.out.println("User found");
-                if (contactsService.findContactsStatus(userId, creator.getId(),  "Ignore").isEmpty() &&
-                        contactsService.isAcceptedContacts(creator.getId(), userId)){
-                    System.out.println("User add");
+            providedIds.addAll(request.getUsersId());
+            System.out.println("Provided user IDs: " + providedIds);
+        }
+
+        // Определяем, включён ли создатель в список переданных ID
+        boolean creatorIncluded = providedIds.contains(creator.getId());
+        // Если создателя нет, то итоговых участников будет на 1 больше, так как он добавляется потом
+        int totalParticipants = creatorIncluded ? providedIds.size() : providedIds.size() + 1;
+
+        // Если итоговых участников ровно 2, то это личный чат
+        boolean isPrivateChat = (totalParticipants == 2);
+        System.out.println("Is private chat: " + isPrivateChat + ", totalParticipants: " + totalParticipants);
+
+        List<User> users = new ArrayList<>();
+
+        // Проходим по переданным идентификаторам для добавления участников
+        for (Long userId : providedIds) {
+            // Если встречается идентификатор создателя, его проверять не обязательно — позже он гарантированно будет добавлен
+            if (userId.equals(creator.getId())) {
+                continue;
+            }
+            User user = userService.findUserById(userId);
+            System.out.println("Processing user: " + user.getUsername() + " (" + user.getId() + ")");
+            if (isPrivateChat) {
+                // Для личного чата проверяем только условие игноров: участник не игнорирует создателя
+                if (contactsService.findContactsStatus(userId, creator.getId(), "Ignore").isEmpty()) {
+                    System.out.println("User " + user.getUsername() + " passed ignore check (private chat).");
                     users.add(user);
+                } else {
+                    System.out.println("User " + user.getUsername() + " is ignoring creator. Not added (private chat).");
+                }
+            } else {
+                // Для группового чата проверяем оба условия: отсутствие игнорирования и подтверждённое добавление (accepted)
+                if (contactsService.findContactsStatus(userId, creator.getId(), "Ignore").isEmpty() &&
+                        contactsService.isAcceptedContacts(creator.getId(), userId)) {
+                    System.out.println("User " + user.getUsername() + " added to group chat.");
+                    users.add(user);
+                } else {
+                    System.out.println("User " + user.getUsername() + " was not added due to ignore/accepted check (group chat).");
                 }
             }
         }
+
+        // Если создатель еще не добавлен, добавляем его
         if (!users.contains(creator)) {
             users.add(creator);
+            System.out.println("Creator added to chat participants.");
         }
+
         Chats chat = Chats.builder()
                 .name(request.getName())
                 .creatorId(creator.getId())
@@ -91,8 +176,10 @@ public class ChatsService {
                 .build();
 
         chatRepository.save(chat);
+        System.out.println("Chat created with ID: " + chat.getId());
         return chatsMapper.toChatResponse(chat);
     }
+
 
     // переименовывание чата
     public ChatResponse renameChat(Authentication authentication, RenameChatRequest request){

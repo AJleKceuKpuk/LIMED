@@ -10,4 +10,5 @@ public interface MessageRepository extends JpaRepository<Messages, Long> {
 
     Page<Messages> findByChatIdOrderBySendTimeDesc(Long chatId, Pageable pageable);
 
+    Page<Messages> findByChatIdAndDeletedFalseOrderBySendTimeDesc(Long chatId, Pageable pageable);
 }

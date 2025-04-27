@@ -9,10 +9,15 @@ import com.limed_backend.security.entity.Messages;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.MessageMapper;
+import com.limed_backend.security.repository.ChatsRepository;
 import com.limed_backend.security.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -27,51 +32,71 @@ public class MessagesService {
     private final UserService userService;
     private final ChatsService chatsService;
     private final MessageRepository messageRepository;
+    private final ChatsRepository chatsRepository;
 
+
+    //получаем сообщение по ID
     public Messages getMessageById(Long id){
         return messageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Сообщение не найдено"));
     }
 
-//    public List<MessageResponse> getMessages(Authentication authentication) {
-//        User currentUser = userService.findUserByUsername(authentication.getName());
-//        List<Messages> activeMessage = messageRepository.findByUsersContainingAndStatus(currentUser, "Active");
-//        return activeChats.stream()
-//                .map(chatsMapper::toChatResponse)
-//                .collect(Collectors.toList());
-//    }
-
-    public MessageResponse createMessage(Authentication authentication, Long chatId, MessageRequest messageRequest){
-        User sender = userService.findUserByUsername(authentication.getName());
-        System.out.println(sender.getUsername());
-
+    public Page<MessageResponse> getMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
+        User user = userService.findUserByUsername(authentication.getName());
         Chats chat = chatsService.getChatById(chatId);
 
-        System.out.println(chatId);
+        boolean isMember = chat.getUsers().stream()
+                .anyMatch(u -> u.getId().equals(user.getId()));
+        if (!isMember) {
+            throw new ResourceNotFoundException("User " + user.getUsername()
+                    + " is not a member of chat with id " + chatId);
+        }
+        Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
+        Page<Messages> messagesPage = messageRepository.findByChatIdAndDeletedFalseOrderBySendTimeDesc(chatId, pageable);
+        return messagesPage.map(messageMapper::toMessageResponse);
+    }
 
-        if (chat == null){
-            System.out.println("chat == null");
+
+    //Создаем сообщение
+    public MessageResponse createMessage(Authentication authentication, MessageRequest request){
+        User sender = userService.findUserByUsername(authentication.getName());
+        Long chatId = request.getChatId();
+        List<Long> users = request.getUsersId();
+        System.out.println(users);
+        Chats chat;
+
+        if (chatId != null){
+            chat = chatsService.getChatById(request.getChatId());
+            if (chat.getStatus().equals("Deleted")){
+                throw new ResourceNotFoundException("Chat deleted!" + chatId);
+            }
+        } else if (users.size() == 2){  
+            chat = chatsService.getPrivateChat(users);
+            if (chat == null){
+                System.out.println("Private chat == null");
+                CreateChatRequest createChatRequest = new CreateChatRequest();
+                createChatRequest.setUsersId(users);
+                ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
+                chat = chatsService.getChatById(chatResponse.getId());
+                System.out.println("chat = new chat" + chat.getCreatorId());
+            }else if (chat.getStatus().equals("Deleted")){
+                chat.setStatus("Active");
+                chatsRepository.save(chat);
+            }
+        }else {
+            System.out.println("Chat haven't");
             CreateChatRequest createChatRequest = new CreateChatRequest();
-            createChatRequest.setUsersId(messageRequest.getUsersId());
+            createChatRequest.setUsersId(users);
+            createChatRequest.setName(sender.getUsername() + " Chats automatically");
             ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
             chat = chatsService.getChatById(chatResponse.getId());
-            System.out.println("chat = new chat");
+            System.out.println("chat = new chat" + chat.getCreatorId());
         }
-        List<User> users = chat.getUsers();
-        if (users.size() == 2 && chat.getStatus().equals("Deleted") ) {
-            System.out.println("deleted");
-            if (chat.getName().isEmpty()){
-                chat.setStatus("Active");
-            }else {
-                throw new RuntimeException("Чат был удален ранее");
-            }
-        }
-
 
         Messages message = Messages.builder()
                 .chat(chat)
                 .sender(sender)
-                .content(messageRequest.getContent())
+                .content(request.getContent())
                 .sendTime(LocalDateTime.now())
                 .metadata("{}")
                 .editedAt(null)
@@ -81,9 +106,9 @@ public class MessagesService {
         return messageMapper.toMessageResponse(message);
     }
 
+    //изменение сообщения
     public MessageResponse editMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
-        chatsService.getChatById(request.getChatId());
         Messages message = getMessageById(request.getId());
         if (!sender.equals(message.getSender())){
             throw new RuntimeException("Только владелец может изменить сообщение");
@@ -95,9 +120,9 @@ public class MessagesService {
         return messageMapper.toMessageResponse(message);
     }
 
+    //удаление сообщения
     public String deleteMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
-        chatsService.getChatById(request.getChatId());
         Messages message = getMessageById(request.getId());
         if (!sender.equals(message.getSender())){
             throw new RuntimeException("Только владелец может удалить сообщение!");

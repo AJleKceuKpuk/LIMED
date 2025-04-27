@@ -75,27 +75,42 @@ public class ChatsController {
 
 
 
+
+
+
     @GetMapping("/{chatId}/messages")
     public ResponseEntity<Page<MessageResponse>> getChatMessages(
+            Authentication authentication,
             @PathVariable Long chatId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createdAt").descending());
-        Page<Messages> messagesPage = messageRepository.findByChatIdOrderBySendTimeDesc(chatId, pageable);
+        Page<MessageResponse> messages = messagesService.getMessagesFromChat(authentication, chatId, page, size);
 
-        // Преобразование сущностей Message в DTO MessageResponse
-        Page<MessageResponse> responsePage = messagesPage.map(messageMapper::toMessageResponse);
-
-        return ResponseEntity.ok(responsePage);
+        return ResponseEntity.ok(messages);
     }
 
-    @PostMapping("/chat={chatId}/create-message")
-    public MessageResponse createMessage(Authentication authentication,
-                                                         @PathVariable Long chatId,
-                                                         @RequestBody MessageRequest request){
-        System.out.println("create-message");
-        return messagesService.createMessage(authentication, chatId, request);
+
+    @PostMapping("/create-message")
+    public ResponseEntity<MessageResponse> createMessage(Authentication authentication,
+                                         @RequestBody MessageRequest request){
+        MessageResponse message = messagesService.createMessage(authentication, request);
+        return ResponseEntity.ok(message);
     }
+
+    @PostMapping("/edit-message")
+    public ResponseEntity<MessageResponse> editMessage(Authentication authentication,
+                                                       @RequestBody MessageRequest request) {
+        MessageResponse message = messagesService.editMessage(authentication, request);
+        return ResponseEntity.ok(message);
+    }
+
+    @PostMapping("/delete-message")
+    public ResponseEntity<String> deleteMessage(Authentication authentication,
+                                                       @RequestBody MessageRequest request) {
+        String message = messagesService.deleteMessage(authentication, request);
+        return ResponseEntity.ok(message);
+    }
+
 
 }

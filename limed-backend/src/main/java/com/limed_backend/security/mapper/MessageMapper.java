@@ -15,24 +15,18 @@ public interface MessageMapper {
 
         MessageResponse response = new MessageResponse();
         response.setId(messages.getId());
-        System.out.println(response.getId());
         response.setChatId(messages.getChat().getId());
-        System.out.println(response.getChatId());
         response.setSendTime(messages.getSendTime());
-        System.out.println(response.getSendTime());
-        response.setSender(messages.getSender());
-        System.out.println(response.getSender().getUsername());
+        response.setSenderName(messages.getSender().getUsername());
+        response.setSenderId(messages.getSender().getId());
         response.setContent(messages.getContent());
-        System.out.println(response.getContent());
-//        List<String> usernames = messages.getViewedBy().stream()
-//                .map(User::getUsername)
-//                .toList();
-//        response.setViewedBy(usernames);
+        List<String> usernames = messages.getViewedBy().stream()
+                .map(User::getUsername)
+                .toList();
+        response.setViewedBy(usernames);
 
         response.setMetadata(messages.getMetadata());
-        System.out.println(response.getMetadata());
         response.setEditedAt(messages.getEditedAt());
-        System.out.println(response.getEditedAt());
         return response;
     }
 }
