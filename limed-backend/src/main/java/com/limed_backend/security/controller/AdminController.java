@@ -2,6 +2,7 @@ package com.limed_backend.security.controller;
 
 import com.limed_backend.security.dto.Requests.*;
 import com.limed_backend.security.dto.Responses.ChatResponse;
+import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.mapper.ChatsMapper;
@@ -9,8 +10,10 @@ import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.AdminService;
 import com.limed_backend.security.service.ChatsService;
+import com.limed_backend.security.service.MessagesService;
 import com.limed_backend.security.service.UserService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -29,6 +32,7 @@ public class AdminController {
     private final AdminService adminService;
     private final UserService userService;
     private final ChatsService chatsService;
+    private final MessagesService messagesService;
 
     @GetMapping("/get-allusers")
     public List<UserResponse> getAllUsers() {
@@ -105,4 +109,26 @@ public class AdminController {
         return ResponseEntity.ok(chat);
     }
 
+    @GetMapping("/chat={chatId}/messages")
+    public ResponseEntity<Page<MessageResponse>> getChatMessages(
+            Authentication authentication,
+            @PathVariable Long chatId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+
+        Page<MessageResponse> messages = messagesService.getMessagesFromChat(authentication, chatId, size, page);
+
+        return ResponseEntity.ok(messages);
+    }
+
+    @GetMapping("/messages/{id}")
+    public ResponseEntity<Page<MessageResponse>> getAllMessagesFromUser(
+            Authentication authentication,
+            @PathVariable Long id,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size){
+
+        Page<MessageResponse> messages = messagesService.getMessagesFromUser(authentication, id, size, page);
+        return ResponseEntity.ok(messages);
+    }
 }

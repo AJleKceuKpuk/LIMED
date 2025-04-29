@@ -26,6 +26,9 @@ public class Messages {
     @JoinColumn(name = "chat_id", nullable = false)
     private Chats chat;
 
+    @Column(name = "type")
+    private String type;
+
     @ManyToOne(optional = false, fetch = FetchType.LAZY)
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;

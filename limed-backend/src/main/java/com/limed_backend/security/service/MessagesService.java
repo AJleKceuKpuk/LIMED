@@ -12,6 +12,7 @@ import com.limed_backend.security.mapper.MessageMapper;
 import com.limed_backend.security.repository.ChatsRepository;
 import com.limed_backend.security.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.boot.rsocket.server.RSocketServerException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
@@ -21,7 +22,6 @@ import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -44,59 +44,90 @@ public class MessagesService {
     public Page<MessageResponse> getMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
         User user = userService.findUserByUsername(authentication.getName());
         Chats chat = chatsService.getChatById(chatId);
-
         boolean isMember = chat.getUsers().stream()
                 .anyMatch(u -> u.getId().equals(user.getId()));
-        if (!isMember) {
+        if (!isMember && !userService.isAdmin(user)) {
             throw new ResourceNotFoundException("User " + user.getUsername()
                     + " is not a member of chat with id " + chatId);
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
-        Page<Messages> messagesPage = messageRepository.findByChatIdAndDeletedFalseOrderBySendTimeDesc(chatId, pageable);
+        Page<Messages> messagesPage;
+        if (!isMember) {
+            messagesPage = messageRepository.findByChatIdOrderBySendTimeDesc(chatId, pageable);
+        } else {
+            messagesPage = messageRepository.findByChatIdAndDeletedFalseOrderBySendTimeDesc(chatId, pageable);
+            messagesPage.forEach(message -> {
+                if (!message.getSender().getId().equals(user.getId())) {
+                    MessageRequest request = new MessageRequest();
+                    request.setId(message.getId());
+                    viewMessage(authentication, request);
+                }
+            });
+        }
         return messagesPage.map(messageMapper::toMessageResponse);
     }
 
+    public Page<MessageResponse> getMessagesFromUser(Authentication authentication, Long userId, int size, int page){
+        User admin = userService.findUserByUsername(authentication.getName());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
+        if (!userService.isAdmin(admin)) {
+            throw new ResourceNotFoundException("Доступно только администраторам!");
+        }
+        Page<Messages> messagesPage = messageRepository.findBySenderIdOrderBySendTimeDesc(userId, pageable);
+        return messagesPage.map(messageMapper::toMessageResponse);
+    }
 
     //Создаем сообщение
     public MessageResponse createMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
-        Long chatId = request.getChatId();
-        List<Long> users = request.getUsersId();
-        System.out.println(users);
-        Chats chat;
 
-        if (chatId != null){
+        Chats chat;
+        if (request.getChatId() != null){
             chat = chatsService.getChatById(request.getChatId());
             if (chat.getStatus().equals("Deleted")){
-                throw new ResourceNotFoundException("Chat deleted!" + chatId);
+                if (chat.getType().equals("PRIVATE")){
+                    chat.setStatus("Active");
+                    chatsRepository.save(chat);
+                }else {
+                    throw new ResourceNotFoundException("Chat deleted!");
+                }
             }
-        } else if (users.size() == 2){  
-            chat = chatsService.getPrivateChat(users);
-            if (chat == null){
-                System.out.println("Private chat == null");
+        }
+
+        else {
+            List<Long> users = request.getUsersId();
+            if (!users.contains(sender.getId())) {
+                users.add(sender.getId());
+            }
+
+            if (users.size() == 2){
+                chat = chatsService.findPrivateChat(users);
+                if (chat == null){
+                    CreateChatRequest createChatRequest = new CreateChatRequest();
+                    createChatRequest.setUsersId(users);
+                    createChatRequest.setType("PRIVATE");
+                    ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
+                    chat = chatsService.getChatById(chatResponse.getId());
+
+                }else if (chat.getStatus().equals("Deleted")){
+                    chat.setStatus("Active");
+                    chatsRepository.save(chat);
+                }
+            }else {
                 CreateChatRequest createChatRequest = new CreateChatRequest();
                 createChatRequest.setUsersId(users);
+                createChatRequest.setType("GROUP");
+                createChatRequest.setName(sender.getUsername() + " Chats automatically");
                 ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
                 chat = chatsService.getChatById(chatResponse.getId());
-                System.out.println("chat = new chat" + chat.getCreatorId());
-            }else if (chat.getStatus().equals("Deleted")){
-                chat.setStatus("Active");
-                chatsRepository.save(chat);
             }
-        }else {
-            System.out.println("Chat haven't");
-            CreateChatRequest createChatRequest = new CreateChatRequest();
-            createChatRequest.setUsersId(users);
-            createChatRequest.setName(sender.getUsername() + " Chats automatically");
-            ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
-            chat = chatsService.getChatById(chatResponse.getId());
-            System.out.println("chat = new chat" + chat.getCreatorId());
         }
 
         Messages message = Messages.builder()
                 .chat(chat)
                 .sender(sender)
                 .content(request.getContent())
+                .type(request.getType())
                 .sendTime(LocalDateTime.now())
                 .metadata("{}")
                 .editedAt(null)
@@ -118,6 +149,21 @@ public class MessagesService {
         message.setEditedAt(LocalDateTime.now());
         messageRepository.save(message);
         return messageMapper.toMessageResponse(message);
+    }
+
+    //метод добавляет имя текущего пользователя в список посмотревших сообщение
+    public void viewMessage(Authentication authentication, MessageRequest request){
+        User user = userService.findUserByUsername(authentication.getName());
+        Messages message = getMessageById(request.getId());
+        boolean isSender = message.getSender().getId().equals(user.getId());
+        if (isSender){
+            throw new RuntimeException("Просмотрел отправитель");
+        }
+        if (!message.getViewedBy().contains(user)) {
+            message.getViewedBy().add(user);
+            messageRepository.save(message);
+        }
+        messageMapper.toMessageResponse(message);
     }
 
     //удаление сообщения

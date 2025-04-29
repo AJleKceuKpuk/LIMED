@@ -14,17 +14,19 @@ public interface MessageMapper {
     default MessageResponse toMessageResponse(Messages messages) {
 
         MessageResponse response = new MessageResponse();
+        List<String> usernames = messages.getViewedBy().stream()
+                .map(User::getUsername)
+                .toList();
+
+
         response.setId(messages.getId());
         response.setChatId(messages.getChat().getId());
+        response.setType(messages.getType());
         response.setSendTime(messages.getSendTime());
         response.setSenderName(messages.getSender().getUsername());
         response.setSenderId(messages.getSender().getId());
         response.setContent(messages.getContent());
-        List<String> usernames = messages.getViewedBy().stream()
-                .map(User::getUsername)
-                .toList();
         response.setViewedBy(usernames);
-
         response.setMetadata(messages.getMetadata());
         response.setEditedAt(messages.getEditedAt());
         return response;

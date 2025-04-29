@@ -15,15 +15,16 @@ public interface ChatsMapper {
     @Named("toChatResponse")
     default ChatResponse toChatResponse(Chats chat) {
         ChatResponse response = new ChatResponse();
-        response.setId(chat.getId());
-        response.setName(chat.getName());
-
         List<String> usernames = chat.getUsers().stream()
                 .map(User::getUsername)
                 .collect(Collectors.toList());
 
+        response.setId(chat.getId());
+        response.setName(chat.getName());
+        response.setType(chat.getType());
         response.setUsername(usernames);
         response.setStatus(chat.getStatus());
+
         return response;
     }
 }

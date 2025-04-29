@@ -10,12 +10,17 @@ import java.util.Optional;
 
 @Repository
 public interface ChatsRepository extends JpaRepository<Chats, Long> {
+
         Optional<Chats> findByIdAndUsers_Id(Long chatId, Long userId);
 
         List<Chats> findByUsersContainingAndStatus(User user, String status);
 
+        List<Chats> findByUsersContaining(User user);
+
         List<Chats> findByName(String name);
 
         List<Chats> findByNameIsNull();
+
+        List<Chats> findByType(String type);
 }
 

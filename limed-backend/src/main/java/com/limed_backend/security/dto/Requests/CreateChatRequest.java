@@ -8,5 +8,6 @@ import java.util.List;
 @Data
 public class CreateChatRequest {
     private String name;
+    private String type;
     private List<Long> usersId;
 }

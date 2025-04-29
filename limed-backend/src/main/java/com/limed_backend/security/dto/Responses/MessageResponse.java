@@ -12,6 +12,7 @@ import java.util.List;
 public class MessageResponse {
     private Long id;
     private Long chatId;
+    private String type;
     private LocalDateTime sendTime;
     private String senderName;
     private Long senderId;

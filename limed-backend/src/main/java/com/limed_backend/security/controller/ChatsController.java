@@ -6,20 +6,14 @@ import com.limed_backend.security.dto.Requests.RenameChatRequest;
 import com.limed_backend.security.dto.Requests.UsersChatRequest;
 import com.limed_backend.security.dto.Responses.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
-import com.limed_backend.security.entity.Messages;
-import com.limed_backend.security.mapper.MessageMapper;
-import com.limed_backend.security.repository.MessageRepository;
 import com.limed_backend.security.service.ChatsService;
 import com.limed_backend.security.service.MessagesService;
 import org.springframework.data.domain.Page;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
@@ -29,13 +23,11 @@ import java.util.List;
 public class ChatsController {
 
     private final ChatsService chatsService;
-    private final MessageRepository messageRepository;
-    private final MessageMapper messageMapper;
     private final MessagesService messagesService;
 
     @GetMapping("/all")
-    public List<ChatResponse> getChats(Authentication authentication){
-        return chatsService.getChats(authentication);
+    public ResponseEntity<List<ChatResponse>> getChats(Authentication authentication){
+        return ResponseEntity.ok(chatsService.getChats(authentication));
     }
 
     @PostMapping("/create")
@@ -75,9 +67,6 @@ public class ChatsController {
 
 
 
-
-
-
     @GetMapping("/{chatId}/messages")
     public ResponseEntity<Page<MessageResponse>> getChatMessages(
             Authentication authentication,
@@ -85,7 +74,7 @@ public class ChatsController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Page<MessageResponse> messages = messagesService.getMessagesFromChat(authentication, chatId, page, size);
+        Page<MessageResponse> messages = messagesService.getMessagesFromChat(authentication, chatId, size, page);
 
         return ResponseEntity.ok(messages);
     }

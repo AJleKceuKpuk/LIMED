@@ -27,6 +27,10 @@ public class Chats {
     @Column(name = "creator_id", nullable = false)
     private Long creatorId;
 
+    @Column(name = "type")
+    private String type;
+    //ALL, GROUP, PRIVATE, SUPPORT
+
     @Column(nullable = false)
     private String status;
 

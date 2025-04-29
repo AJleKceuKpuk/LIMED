@@ -136,8 +136,8 @@ public class UserService {
         );
     }
 
-    // Получаем текущего пользователя из Authentication
-    public User getCurrentUser(Authentication authentication) {
-        return findUserByUsername(authentication.getName());
+    public boolean isAdmin(User user) {
+        return user.getRoles().stream().anyMatch(role -> "ADMIN".equals(role.getName()));
     }
 }
+
