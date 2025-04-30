@@ -24,31 +24,30 @@ public class ContactsService {
     private final ContactsMapper contactsMapper;
 
     //список всех контактов пользователя
-    public List<Contacts> findAcceptedContacts(Long senderId, Long receiverId) {
-        List<Contacts> contacts = contactsRepository.
-                findBySender_IdAndStatusOrReceiver_IdAndStatus(senderId,"Accepted",receiverId,"Accepted");
-        if (!contacts.isEmpty()) {
-            return contacts;
-        }
-        return null;
+    public List<Contacts> findAcceptedContacts(Long userId) {
+        return contactsRepository.findAcceptedByUser(userId);
     }
 
     //проверка, что дружба реально существует
     public boolean isAcceptedContacts(Long senderId, Long receiverId){
-        return findContactsStatus(senderId, receiverId, "Accepted").isPresent() ||
-                findContactsStatus(receiverId, senderId, "Accepted").isPresent();
+        return contactsRepository.findContactBetween(senderId, receiverId, "Accepted").isPresent();
     }
 
-    // Поиск дружбы со статусом
+    // Поиск связи между пользователями со статусом
     public Optional<Contacts> findContactsStatus(Long senderId, Long receiverId, String status) {
-        return contactsRepository.findBySender_IdAndReceiver_IdAndStatus(senderId, receiverId, status);
+        return contactsRepository.findContactBetween(senderId, receiverId, status);
+    }
+
+    //поиск связи в одностороннем порядке
+    public Optional<Contacts> findDirectStatus(Long senderId, Long receiverId, String status){
+        return contactsRepository.findDirectContact(senderId, receiverId, status);
     }
 
     // Список друзей
     public List<ContactsResponse> getContacts(Authentication authentication) {
         User receiver = userService.findUserByUsername(authentication.getName());
 
-        List<Contacts> contacts = findAcceptedContacts(receiver.getId(), receiver.getId());
+        List<Contacts> contacts = findAcceptedContacts(receiver.getId());
 
         return contacts.stream()
                 .map(contact -> contactsMapper.toContactsResponse(contact, receiver.getId()))
@@ -108,7 +107,7 @@ public class ContactsService {
         if (sender.getId().equals(receiverId)) {
             return "Вы не можете себе отправить дружбу";
         }
-        Optional<Contacts> alreadyIgnored = findContactsStatus(receiver.getId(),sender.getId(), "Ignore");
+        Optional<Contacts> alreadyIgnored = findDirectStatus(receiver.getId(),sender.getId(), "Ignore");
         if(alreadyIgnored.isPresent()) {
             return "Пользователь заблокировал Вас";
         }
@@ -151,13 +150,13 @@ public class ContactsService {
             return "Пользователь является вашим другом";
         }
 
-        Optional<Contacts> alreadyIgnored = findContactsStatus(sender.getId(), receiver.getId(), "Ignore");
+        Optional<Contacts> alreadyIgnored = findDirectStatus(sender.getId(), receiver.getId(), "Ignore");
         if(alreadyIgnored.isPresent()) {
             return "Пользователь уже заблокирован";
         }
 
-        Optional<Contacts> outgoingInvitation = findContactsStatus(sender.getId(), receiver.getId(), "Pending");
-        Optional<Contacts> incomingInvitation = findContactsStatus(receiver.getId(), sender.getId(), "Pending");
+        Optional<Contacts> outgoingInvitation = findDirectStatus(sender.getId(), receiver.getId(), "Pending");
+        Optional<Contacts> incomingInvitation = findDirectStatus(receiver.getId(), sender.getId(), "Pending");
         if (incomingInvitation.isPresent()) {
             contactsRepository.delete(incomingInvitation.get());
         } else outgoingInvitation.ifPresent(contactsRepository::delete);
@@ -183,7 +182,7 @@ public class ContactsService {
             return "Пользователь уже является вашим другом";
         }
 
-        Optional<Contacts> contactsInvitationOpt = findContactsStatus(senderId, receiver.getId(), "Pending");
+        Optional<Contacts> contactsInvitationOpt = findDirectStatus(senderId, receiver.getId(), "Pending");
         if (contactsInvitationOpt.isEmpty()) {
             throw new ResourceNotFoundException("У вас нет предложений для дружбы от пользователя с id " + senderId);
         }
@@ -199,7 +198,7 @@ public class ContactsService {
     public String cancelContacts(Authentication authentication, Long senderId) {
         User receiver = userService.findUserByUsername(authentication.getName());
         userService.findUserById(senderId);
-        Optional<Contacts> contactsInvitation = findContactsStatus(senderId, receiver.getId(), "Pending");
+        Optional<Contacts> contactsInvitation = findDirectStatus(senderId, receiver.getId(), "Pending");
         if (contactsInvitation.isEmpty()) {
             throw new ResourceNotFoundException("У Вас нет предложений для дружбы от пользователя с id " + senderId);
         }
@@ -214,11 +213,11 @@ public class ContactsService {
         if (receiver.getId().equals(senderId)) {
             return "Вы являетесь этим пользователем, удалить невозможно";
         }
-        List<Contacts> acceptedContacts = findAcceptedContacts(senderId, receiver.getId());
-        if (acceptedContacts == null || acceptedContacts.isEmpty()) {
+        Optional<Contacts> acceptedContacts = findContactsStatus(senderId, receiver.getId(), "Accepted");
+        if (acceptedContacts.isEmpty()) {
             return "Контакт не найден";
         }
-        contactsRepository.delete(acceptedContacts.get(0));
+        contactsRepository.delete(acceptedContacts.get());
         return "Пользователь удален из списка друзей";
     }
 
@@ -227,7 +226,7 @@ public class ContactsService {
         User sender = userService.findUserByUsername(authentication.getName());
         User receiver = userService.findUserById(receiverId);
 
-        Optional<Contacts> ignoreUser = findContactsStatus(sender.getId(), receiverId, "Ignore");
+        Optional<Contacts> ignoreUser = findDirectStatus(sender.getId(), receiverId, "Ignore");
         if (ignoreUser.isEmpty()) {
             throw new ResourceNotFoundException("У Вас нет игнорируемых пользователей");
         }

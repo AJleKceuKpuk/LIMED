@@ -6,6 +6,7 @@ import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
 import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ContactsService;
+import com.limed_backend.security.service.MessagesService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -23,6 +24,7 @@ public class UserController {
 
     private final ContactsService contactsService;
     private final UserService userService;
+    private final MessagesService messagesService;
 
 
     @GetMapping("/profile")
@@ -117,6 +119,12 @@ public class UserController {
                                                @PathVariable Long id){
         String resultMessage = contactsService.deleteIgnore(authentication, id);
         return ResponseEntity.ok(resultMessage);
+    }
+
+    @GetMapping("/message-new")
+    public ResponseEntity<Long> countMessage(Authentication authentication){
+        Long result = messagesService.countUnreadMessages(authentication);
+        return ResponseEntity.ok(result);
     }
 
 }

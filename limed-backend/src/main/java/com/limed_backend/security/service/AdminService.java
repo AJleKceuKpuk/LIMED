@@ -82,7 +82,7 @@ public class AdminService {
         User user = userService.findUserByUsername(request.getUsername());
         User admin = userService.findUserByUsername(authentication.getName());
         List<Blocking> activeBlocks = blockingRepository
-                .findByUserAndBlockingTypeAndRevokedBlockFalse(user, request.getBlockingType());
+                .findActiveBlockings(user, request.getBlockingType());
         if (activeBlocks.isEmpty()) {
             return "Нет активных блокировок типа " + request.getBlockingType()
                     + " для пользователя " + user.getUsername();

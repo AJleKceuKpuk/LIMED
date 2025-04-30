@@ -41,7 +41,7 @@ public class BanCheckFilter extends OncePerRequestFilter {
             }
             User user = userService.findUserByUsername(auth.getName());
             if (user != null) {
-                List<Blocking> activeBlocks = blockingRepository.findByUserAndBlockingTypeAndRevokedBlockFalse(user, "ban");
+                List<Blocking> activeBlocks = blockingRepository.findActiveBlockings(user, "ban");
                 if (activeBlocks.stream().findAny().isPresent()) {
                     Blocking banRecord = activeBlocks.get(0);
                     String banReason = banRecord.getReason();

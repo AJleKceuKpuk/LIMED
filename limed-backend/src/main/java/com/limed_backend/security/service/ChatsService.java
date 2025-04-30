@@ -68,7 +68,7 @@ public class ChatsService {
     //Выдать все чаты текущего пользователя
     public List<ChatResponse> getChats(Authentication authentication) {
         User currentUser = userService.findUserByUsername(authentication.getName());
-        List<Chats> activeChats = chatRepository.findDistinctByChatUsersUserAndChatUsersStatus(currentUser, "Active");
+        List<Chats> activeChats = chatRepository.findChatsByUserAndStatus(currentUser.getId(), "Active");
 
         return activeChats.stream()
                 .map(chatsMapper::toChatResponse)
@@ -94,7 +94,7 @@ public class ChatsService {
         User user = userService.findUserById(id);
 
         if (userService.isAdmin(admin)) {
-            List<Chats> userChats = chatRepository.findDistinctByChatUsersUser(user);
+            List<Chats> userChats = chatRepository.findChatsByUser(user.getId());
             return userChats.stream()
                     .map(chatsMapper::toChatResponse)
                     .collect(Collectors.toList());
@@ -102,6 +102,7 @@ public class ChatsService {
         return null;
     }
 
+    //создание чата
     public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
         User creator = userService.findUserByUsername(authentication.getName());
         String type = request.getType();
@@ -112,6 +113,7 @@ public class ChatsService {
         }
         //не забываем про создателя
         usersId.add(creator.getId());
+
 
         List<User> users = new ArrayList<>();
         for (Long userId : usersId) {
@@ -131,7 +133,6 @@ public class ChatsService {
             }
         }
 
-        // Создаём объект чата
         Chats chat = Chats.builder()
                 .name(request.getName())
                 .creatorId(creator.getId())
@@ -139,7 +140,6 @@ public class ChatsService {
                 .status("Active")
                 .build();
 
-        // Создаём список записей ChatUser для каждого участника
         List<ChatUser> chatUsers = new ArrayList<>();
         for (User user : users) {
             ChatUser chatUser = new ChatUser();
@@ -149,9 +149,7 @@ public class ChatsService {
             chatUsers.add(chatUser);
         }
         chat.setChatUsers(chatUsers);
-
         chatRepository.save(chat);
-        System.out.println("Chat created with ID: " + chat.getId());
         return chatsMapper.toChatResponse(chat);
     }
 

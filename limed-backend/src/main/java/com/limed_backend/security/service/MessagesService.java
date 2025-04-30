@@ -40,6 +40,7 @@ public class MessagesService {
                 .orElseThrow(() -> new ResourceNotFoundException("Сообщение не найдено"));
     }
 
+    //получить все сообщения с чата
     public Page<MessageResponse> getMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
         User user = userService.findUserByUsername(authentication.getName());
         Chats chat = chatsService.getChatById(chatId);
@@ -69,6 +70,7 @@ public class MessagesService {
         return messagesPage.map(messageMapper::toMessageResponse);
     }
 
+    //получить все сообщения пользователя
     public Page<MessageResponse> getMessagesFromUser(Authentication authentication, Long userId, int size, int page){
         User admin = userService.findUserByUsername(authentication.getName());
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
@@ -83,7 +85,6 @@ public class MessagesService {
     public MessageResponse createMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
         Chats chat;
-
         if (request.getChatId() != null){
             chat = chatsService.getChatById(request.getChatId());
             if ("Deleted".equals(chat.getStatus())){
@@ -95,13 +96,11 @@ public class MessagesService {
                 }
             }
         }
-
         else {
             List<Long> users = request.getUsersId();
             if (!users.contains(sender.getId())) {
                 users.add(sender.getId());
             }
-
             if (users.size() == 2){
                 chat = chatsService.findPrivateChat(users);
                 if (chat == null){
@@ -124,7 +123,6 @@ public class MessagesService {
                 chat = chatsService.getChatById(chatResponse.getId());
             }
         }
-
         Messages message = Messages.builder()
                 .chat(chat)
                 .sender(sender)
@@ -168,6 +166,11 @@ public class MessagesService {
         messageMapper.toMessageResponse(message);
     }
 
+    public long countUnreadMessages(Authentication authentication) {
+        User user = userService.findUserByUsername(authentication.getName());
+        return messageRepository.countUnreadMessagesForUser(user);
+    }
+
     //удаление сообщения
     public String deleteMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
@@ -179,5 +182,7 @@ public class MessagesService {
         messageRepository.save(message);
         return "Сообщение удалено!";
     }
+
+
 
 }
