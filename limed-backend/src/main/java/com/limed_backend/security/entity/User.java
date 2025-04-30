@@ -57,15 +57,15 @@ public class User {
     @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Contacts> contactsReceiver = new ArrayList<>();
 
-    // Чаты, в которых участвует пользователь.
-    @ManyToMany(mappedBy = "users")
-    private List<Chats> chats = new ArrayList<>();
+    // Связь с чатами через сущность ChatUser
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChatUser> chatUsers = new ArrayList<>();
 
-    // Сообщения, отправленные пользователем.
+    // Сообщения, отправленные пользователем
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Messages> sentMessages = new ArrayList<>();
 
-    // Сообщения, которые пользователь просмотрел (обратная сторона связи из Messages.viewedBy).
+    // Сообщения, просмотренные пользователем
     @ManyToMany(mappedBy = "viewedBy")
     private List<Messages> viewedMessages = new ArrayList<>();
 }

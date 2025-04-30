@@ -1,11 +1,7 @@
 package com.limed_backend.security.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Builder;
-import lombok.Data;
-import lombok.NoArgsConstructor;
-import jakarta.persistence.Id;
+import lombok.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -28,22 +24,16 @@ public class Chats {
     private Long creatorId;
 
     @Column(name = "type")
-    private String type;
-    //ALL, GROUP, PRIVATE, SUPPORT
+    private String type;  // Примеры: "ALL", "GROUP", "PRIVATE", "SUPPORT"
 
     @Column(nullable = false)
     private String status;
 
-    @ManyToMany
-    @JoinTable(
-            name = "chat_users",
-            joinColumns = @JoinColumn(name = "chat_id"),
-            inverseJoinColumns = @JoinColumn(name = "user_id")
-    )
-    private List<User> users = new ArrayList<>();
+    // Участники чата через сущность ChatUser
+    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<ChatUser> chatUsers = new ArrayList<>();
 
+    // Сообщения в чате
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Messages> messages = new ArrayList<>();
-
-
 }

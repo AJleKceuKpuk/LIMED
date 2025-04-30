@@ -2,7 +2,6 @@ package com.limed_backend.security.mapper;
 
 import com.limed_backend.security.dto.Responses.ChatResponse;
 import com.limed_backend.security.entity.Chats;
-import com.limed_backend.security.entity.User;
 import org.mapstruct.Mapper;
 import org.mapstruct.Named;
 
@@ -15,8 +14,9 @@ public interface ChatsMapper {
     @Named("toChatResponse")
     default ChatResponse toChatResponse(Chats chat) {
         ChatResponse response = new ChatResponse();
-        List<String> usernames = chat.getUsers().stream()
-                .map(User::getUsername)
+
+        List<String> usernames = chat.getChatUsers().stream()
+                .map(chatUser -> chatUser.getUser().getUsername())
                 .collect(Collectors.toList());
 
         response.setId(chat.getId());
@@ -24,7 +24,7 @@ public interface ChatsMapper {
         response.setType(chat.getType());
         response.setUsername(usernames);
         response.setStatus(chat.getStatus());
-
+        response.setCount((long) chat.getMessages().size());
         return response;
     }
 }

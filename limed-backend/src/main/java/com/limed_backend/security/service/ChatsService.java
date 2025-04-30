@@ -4,10 +4,12 @@ import com.limed_backend.security.dto.Requests.CreateChatRequest;
 import com.limed_backend.security.dto.Requests.RenameChatRequest;
 import com.limed_backend.security.dto.Requests.UsersChatRequest;
 import com.limed_backend.security.dto.Responses.ChatResponse;
+import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.ChatsMapper;
+import com.limed_backend.security.repository.ChatUserRepository;
 import com.limed_backend.security.repository.ChatsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.Authentication;
@@ -25,6 +27,7 @@ public class ChatsService {
     private final UserService userService;
     private final ContactsService contactsService;
     private final ChatsMapper chatsMapper;
+    private final ChatUserRepository chatUserRepository;
 
     // поиск чата по Id
     public Chats getChatById(Long id){
@@ -46,15 +49,14 @@ public class ChatsService {
 
     //Поиск приватного чата исходя из списка пользователей (приватный чат с пустым именем)
     public Chats findPrivateChat(List<Long> usersId) {
-
         Set<Long> requestedUserIds = new HashSet<>(usersId);
         List<Chats> privateChats = chatRepository.findByType("PRIVATE");
 
         Optional<Chats> privateChat = privateChats.stream()
                 .filter(chat -> {
-                    Set<Long> chatUserIds = chat.getUsers()
+                    Set<Long> chatUserIds = chat.getChatUsers()
                             .stream()
-                            .map(User::getId)
+                            .map(chatUser -> chatUser.getUser().getId())
                             .collect(Collectors.toSet());
                     return chatUserIds.equals(requestedUserIds);
                 })
@@ -62,19 +64,22 @@ public class ChatsService {
         return privateChat.orElse(null);
     }
 
+
     //Выдать все чаты текущего пользователя
     public List<ChatResponse> getChats(Authentication authentication) {
         User currentUser = userService.findUserByUsername(authentication.getName());
-        List<Chats> activeChats = chatRepository.findByUsersContainingAndStatus(currentUser, "Active");
+        List<Chats> activeChats = chatRepository.findDistinctByChatUsersUserAndChatUsersStatus(currentUser, "Active");
+
         return activeChats.stream()
                 .map(chatsMapper::toChatResponse)
                 .collect(Collectors.toList());
     }
 
+
     // Показать список чатов для Администратора!
     public List<ChatResponse> getAllChats(Authentication authentication) {
         User admin = userService.findUserByUsername(authentication.getName());
-        if (userService.isAdmin(admin)){
+        if (userService.isAdmin(admin)) {
             List<Chats> allChats = chatRepository.findAll();
             return allChats.stream()
                     .map(chatsMapper::toChatResponse)
@@ -84,12 +89,13 @@ public class ChatsService {
     }
 
     // Показать список чатов для Администратора любого пользователя
-    public List<ChatResponse> getAllChatsByUser(Authentication authentication, Long id){
+    public List<ChatResponse> getAllChatsByUser(Authentication authentication, Long id) {
         User admin = userService.findUserByUsername(authentication.getName());
         User user = userService.findUserById(id);
-        if (userService.isAdmin(admin)){
-            List<Chats> activeChats = chatRepository.findByUsersContaining(user);
-            return activeChats.stream()
+
+        if (userService.isAdmin(admin)) {
+            List<Chats> userChats = chatRepository.findDistinctByChatUsersUser(user);
+            return userChats.stream()
                     .map(chatsMapper::toChatResponse)
                     .collect(Collectors.toList());
         }
@@ -124,18 +130,30 @@ public class ChatsService {
                 }
             }
         }
+
+        // Создаём объект чата
         Chats chat = Chats.builder()
                 .name(request.getName())
                 .creatorId(creator.getId())
                 .type(type)
                 .status("Active")
-                .users(users)
                 .build();
+
+        // Создаём список записей ChatUser для каждого участника
+        List<ChatUser> chatUsers = new ArrayList<>();
+        for (User user : users) {
+            ChatUser chatUser = new ChatUser();
+            chatUser.setChat(chat);
+            chatUser.setUser(user);
+            chatUser.setStatus("Active");
+            chatUsers.add(chatUser);
+        }
+        chat.setChatUsers(chatUsers);
+
         chatRepository.save(chat);
         System.out.println("Chat created with ID: " + chat.getId());
         return chatsMapper.toChatResponse(chat);
     }
-
 
     // переименовывание чата
     public ChatResponse renameChat(Authentication authentication, RenameChatRequest request){
@@ -152,44 +170,50 @@ public class ChatsService {
         User currentUser = userService.findUserByUsername(authentication.getName());
         Chats chat = getChatById(request.getId());
 
-        List<User> usersFromChat = chat.getUsers();
-        if (usersFromChat == null) {
-            usersFromChat = new ArrayList<>();
-        }
-        if (chat.getType().equals("PRIVATE")) {
-            CreateChatRequest newChatRequest = new CreateChatRequest();
+        if ("PRIVATE".equals(chat.getType())) {
+            Set<Long> currentUserIds = chat.getChatUsers().stream()
+                    .map(chatUser -> chatUser.getUser().getId())
+                    .collect(Collectors.toSet());
 
-            List<Long> usersIds = usersFromChat.stream()
-                    .map(User::getId)
-                    .collect(Collectors.toList());
             if (request.getUsersId() != null) {
-
                 for (Long userId : request.getUsersId()) {
-
-                    if (!usersIds.contains(userId)) {
-                        if (contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
-                            usersIds.add(userId);
+                    if (!currentUserIds.contains(userId)) {
+                        if (userId.equals(currentUser.getId()) || contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
+                            currentUserIds.add(userId);
                         }
                     }
                 }
             }
+
+            CreateChatRequest newChatRequest = new CreateChatRequest();
             newChatRequest.setName(authentication.getName());
-            newChatRequest.setUsersId(usersIds);
+            newChatRequest.setUsersId(new ArrayList<>(currentUserIds));
+
             return createChat(authentication, newChatRequest);
-        } else {
+        } else if ("GROUP".equals(chat.getType())) {
+            List<ChatUser> chatUsers = chat.getChatUsers();
+            if (chatUsers == null) {
+                chatUsers = new ArrayList<>();
+            }
+
             for (Long userId : request.getUsersId()) {
-                boolean exists = usersFromChat.stream().anyMatch(user -> user.getId().equals(userId));
-                if (!exists) {
+                boolean exists = chatUsers.stream()
+                        .anyMatch(cu -> cu.getUser().getId().equals(userId));
+                if (!exists && contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
                     User user = userService.findUserById(userId);
-                    if (contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
-                        usersFromChat.add(user);
-                    }
+                    ChatUser newChatUser = new ChatUser();
+
+                    newChatUser.setChat(chat);
+                    newChatUser.setUser(user);
+                    newChatUser.setStatus("Active");
+                    chatUsers.add(newChatUser);
                 }
             }
-            chat.setUsers(usersFromChat);
+            chat.setChatUsers(chatUsers);
             chatRepository.save(chat);
             return chatsMapper.toChatResponse(chat);
         }
+        return null;
     }
 
     // удаление пользователей в чат
@@ -202,17 +226,16 @@ public class ChatsService {
         if (request.getUsersId() == null || request.getUsersId().isEmpty()) {
             throw new RuntimeException("Не указаны пользователи для удаления");
         }
-
-        List<User> users = chat.getUsers();
-        if (users == null) {
+        List<ChatUser> chatUsers = chat.getChatUsers();
+        if (chatUsers == null || chatUsers.isEmpty()) {
             throw new RuntimeException("Список участников чата пуст");
         }
+        chatUsers.removeIf(chatUser -> {
+            Long userId = chatUser.getUser().getId();
+            return request.getUsersId().contains(userId) && !userId.equals(chat.getCreatorId());
+        });
 
-        users.removeIf(user ->
-                request.getUsersId().contains(user.getId()) && !user.getId().equals(chat.getCreatorId())
-        );
-
-        chat.setUsers(users);
+        chat.setChatUsers(chatUsers);
         chatRepository.save(chat);
         return chatsMapper.toChatResponse(chat);
     }
@@ -237,4 +260,45 @@ public class ChatsService {
         chatRepository.save(chat);
         return chatsMapper.toChatResponse(chat);
     }
+
+    public ChatResponse leaveChat(Authentication authentication, Long chatId) {
+        User currentUser = userService.findUserByUsername(authentication.getName());
+
+        Chats chat = getChatById(chatId);
+
+        ChatUser chatUser = chat.getChatUsers()
+                .stream()
+                .filter(cu -> cu.getUser().getId().equals(currentUser.getId()))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("User is not a member of chat with id " + chatId));
+
+        if (chat.getCreatorId().equals(currentUser.getId())) {
+            throw new RuntimeException("Создатель чата не может выйти из чата");
+        }
+
+        chatUser.setStatus("leave");
+        chatUserRepository.save(chatUser);
+
+        // Возвращаем обновлённую информацию о чате
+        return chatsMapper.toChatResponse(chat);
+    }
+
+    public ChatResponse removeFromChat(Authentication authentication, Long chatId, Long userId){
+        User currentUser = userService.findUserByUsername(authentication.getName());
+        Chats chat = getChatById(chatId);
+        checkCreator(currentUser, chat);
+
+        ChatUser chatUser = chat.getChatUsers()
+                .stream()
+                .filter(cu -> cu.getUser().getId().equals(userId))
+                .findFirst()
+                .orElseThrow(() -> new ResourceNotFoundException("User is not a member of chat with id " + chatId));
+
+        chatUser.setStatus("deleted");
+        chatUserRepository.save(chatUser);
+
+        // Возвращаем обновлённую информацию о чате
+        return chatsMapper.toChatResponse(chat);
+    }
+
 }

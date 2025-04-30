@@ -12,7 +12,6 @@ import com.limed_backend.security.mapper.MessageMapper;
 import com.limed_backend.security.repository.ChatsRepository;
 import com.limed_backend.security.repository.MessageRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.boot.rsocket.server.RSocketServerException;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
 import org.springframework.security.core.Authentication;
@@ -44,14 +43,17 @@ public class MessagesService {
     public Page<MessageResponse> getMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
         User user = userService.findUserByUsername(authentication.getName());
         Chats chat = chatsService.getChatById(chatId);
-        boolean isMember = chat.getUsers().stream()
-                .anyMatch(u -> u.getId().equals(user.getId()));
+        boolean isMember = chat.getChatUsers()
+                .stream()
+                .anyMatch(chatUser -> chatUser.getUser().getId().equals(user.getId()));
+
         if (!isMember && !userService.isAdmin(user)) {
-            throw new ResourceNotFoundException("User " + user.getUsername()
-                    + " is not a member of chat with id " + chatId);
+            throw new ResourceNotFoundException("User " + user.getUsername() +
+                    " is not a member of chat with id " + chatId);
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
         Page<Messages> messagesPage;
+
         if (!isMember) {
             messagesPage = messageRepository.findByChatIdOrderBySendTimeDesc(chatId, pageable);
         } else {
@@ -80,12 +82,12 @@ public class MessagesService {
     //Создаем сообщение
     public MessageResponse createMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
-
         Chats chat;
+
         if (request.getChatId() != null){
             chat = chatsService.getChatById(request.getChatId());
-            if (chat.getStatus().equals("Deleted")){
-                if (chat.getType().equals("PRIVATE")){
+            if ("Deleted".equals(chat.getStatus())){
+                if ("PRIVATE".equals(chat.getType())){
                     chat.setStatus("Active");
                     chatsRepository.save(chat);
                 }else {
@@ -109,7 +111,7 @@ public class MessagesService {
                     ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
                     chat = chatsService.getChatById(chatResponse.getId());
 
-                }else if (chat.getStatus().equals("Deleted")){
+                }else if ("Deleted".equals(chat.getStatus())){
                     chat.setStatus("Active");
                     chatsRepository.save(chat);
                 }

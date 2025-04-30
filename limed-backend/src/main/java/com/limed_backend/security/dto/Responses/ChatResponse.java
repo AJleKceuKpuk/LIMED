@@ -11,4 +11,5 @@ public class ChatResponse {
     private String type;
     private List<String> username;
     private String status;
+    private Long count;
 }
