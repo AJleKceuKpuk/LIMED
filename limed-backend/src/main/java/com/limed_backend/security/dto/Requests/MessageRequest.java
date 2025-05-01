@@ -13,5 +13,4 @@ public class MessageRequest {
     private String metadata;
     private List<Long> usersId;
     private Long viewerId;
-
 }

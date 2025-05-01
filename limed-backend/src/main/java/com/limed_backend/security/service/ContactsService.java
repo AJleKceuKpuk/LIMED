@@ -44,13 +44,11 @@ public class ContactsService {
     }
 
     // Список друзей
-    public List<ContactsResponse> getContacts(Authentication authentication) {
-        User receiver = userService.findUserByUsername(authentication.getName());
-
-        List<Contacts> contacts = findAcceptedContacts(receiver.getId());
+    public List<ContactsResponse> getContacts(User user) {
+        List<Contacts> contacts = findAcceptedContacts(user.getId());
 
         return contacts.stream()
-                .map(contact -> contactsMapper.toContactsResponse(contact, receiver.getId()))
+                .map(contact -> contactsMapper.toContactsResponse(contact, user.getId()))
                 .collect(Collectors.toList());
     }
 

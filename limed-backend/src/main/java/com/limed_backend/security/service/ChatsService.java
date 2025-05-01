@@ -22,7 +22,6 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ChatsService {
 
-
     private final ChatsRepository chatRepository;
     private final UserService userService;
     private final ContactsService contactsService;

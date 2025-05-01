@@ -1,6 +1,5 @@
 package com.limed_backend.security.websocket;
 
-import com.limed_backend.security.service.ConnectionService;
 import com.limed_backend.security.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.event.EventListener;

@@ -17,10 +17,28 @@ public interface MessageRepository extends JpaRepository<Messages, Long> {
             "AND :user NOT MEMBER OF m.viewedBy")
     Long countUnreadMessagesForUser(@Param("user") User user);
 
-    Page<Messages> findByChatIdOrderBySendTimeDesc(Long chatId, Pageable pageable);
+    // Получаем все сообщения из чата
+    @Query("FROM Messages m " +
+            "WHERE m.chatId = :chatId " +
+            "ORDER BY m.sendTime DESC")
+    Page<Messages> AllMessagesFromChat(@Param("chatId") Long chatId,
+                                       Pageable pageable);
 
-    Page<Messages> findByChatIdAndDeletedFalseOrderBySendTimeDesc(Long chatId, Pageable pageable);
+    // Получаем лишь неудалённые сообщения из чата
+    @Query("FROM Messages m " +
+            "WHERE m.chatId = :chatId " +
+            "AND m.deleted = false " +
+            "ORDER BY m.sendTime DESC")
+    Page<Messages> ActiveMessagesFromChat(@Param("chatId") Long chatId,
+                                          Pageable pageable);
 
-    Page<Messages> findBySenderIdOrderBySendTimeDesc(Long senderId, Pageable pageable);
+    // Получаем все сообщения пользователя
+    @Query("FROM Messages m " +
+            "WHERE m.sender.id = :senderId " +
+            "ORDER BY m.sendTime DESC")
+    Page<Messages> AllMessagesFromUser(@Param("senderId") Long senderId,
+                                       Pageable pageable);
+
+
 
 }

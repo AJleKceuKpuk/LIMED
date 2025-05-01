@@ -56,9 +56,9 @@ public class MessagesService {
         Page<Messages> messagesPage;
 
         if (!isMember) {
-            messagesPage = messageRepository.findByChatIdOrderBySendTimeDesc(chatId, pageable);
+            messagesPage = messageRepository.AllMessagesFromChat(chatId, pageable);
         } else {
-            messagesPage = messageRepository.findByChatIdAndDeletedFalseOrderBySendTimeDesc(chatId, pageable);
+            messagesPage = messageRepository.ActiveMessagesFromChat(chatId, pageable);
             messagesPage.forEach(message -> {
                 if (!message.getSender().getId().equals(user.getId())) {
                     MessageRequest request = new MessageRequest();
@@ -77,7 +77,7 @@ public class MessagesService {
         if (!userService.isAdmin(admin)) {
             throw new ResourceNotFoundException("Доступно только администраторам!");
         }
-        Page<Messages> messagesPage = messageRepository.findBySenderIdOrderBySendTimeDesc(userId, pageable);
+        Page<Messages> messagesPage = messageRepository.AllMessagesFromUser(userId, pageable);
         return messagesPage.map(messageMapper::toMessageResponse);
     }
 
@@ -151,26 +151,6 @@ public class MessagesService {
         return messageMapper.toMessageResponse(message);
     }
 
-    //метод добавляет имя текущего пользователя в список посмотревших сообщение
-    public void viewMessage(Authentication authentication, MessageRequest request){
-        User user = userService.findUserByUsername(authentication.getName());
-        Messages message = getMessageById(request.getId());
-        boolean isSender = message.getSender().getId().equals(user.getId());
-        if (isSender){
-            throw new RuntimeException("Просмотрел отправитель");
-        }
-        if (!message.getViewedBy().contains(user)) {
-            message.getViewedBy().add(user);
-            messageRepository.save(message);
-        }
-        messageMapper.toMessageResponse(message);
-    }
-
-    public long countUnreadMessages(Authentication authentication) {
-        User user = userService.findUserByUsername(authentication.getName());
-        return messageRepository.countUnreadMessagesForUser(user);
-    }
-
     //удаление сообщения
     public String deleteMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
@@ -182,6 +162,27 @@ public class MessagesService {
         messageRepository.save(message);
         return "Сообщение удалено!";
     }
+
+    //метод добавляет имя текущего пользователя в список посмотревших сообщение
+    public MessageResponse viewMessage(Authentication authentication, MessageRequest request){
+        User user = userService.findUserByUsername(authentication.getName());
+        Messages message = getMessageById(request.getId());
+        boolean isSender = message.getSender().getId().equals(user.getId());
+        if (isSender){
+            throw new RuntimeException("Просмотрел отправитель");
+        }
+        if (!message.getViewedBy().contains(user)) {
+            message.getViewedBy().add(user);
+            messageRepository.save(message);
+        }
+        return messageMapper.toMessageResponse(message);
+    }
+
+    public long countUnreadMessages(User user) {
+        return messageRepository.countUnreadMessagesForUser(user);
+    }
+
+
 
 
 

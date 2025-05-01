@@ -57,7 +57,8 @@ public class UserController {
 
     @GetMapping("/contacts")
     public ResponseEntity<List<ContactsResponse>> getContacts(Authentication authentication) {
-        List<ContactsResponse> friends = contactsService.getContacts(authentication);
+        User user = userService.findUserByUsername(authentication.getName());
+        List<ContactsResponse> friends = contactsService.getContacts(user);
         return ResponseEntity.ok(friends);
     }
 
@@ -123,7 +124,8 @@ public class UserController {
 
     @GetMapping("/message-new")
     public ResponseEntity<Long> countMessage(Authentication authentication){
-        Long result = messagesService.countUnreadMessages(authentication);
+        User user = userService.findUserByUsername(authentication.getName());
+        Long result = messagesService.countUnreadMessages(user);
         return ResponseEntity.ok(result);
     }
 

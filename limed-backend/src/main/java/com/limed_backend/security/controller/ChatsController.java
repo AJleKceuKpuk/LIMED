@@ -6,8 +6,10 @@ import com.limed_backend.security.dto.Requests.RenameChatRequest;
 import com.limed_backend.security.dto.Requests.UsersChatRequest;
 import com.limed_backend.security.dto.Responses.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
+import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ChatsService;
 import com.limed_backend.security.service.MessagesService;
+import com.limed_backend.security.service.UserService;
 import org.springframework.data.domain.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -24,6 +26,7 @@ public class ChatsController {
 
     private final ChatsService chatsService;
     private final MessagesService messagesService;
+    private final UserService userService;
 
     @GetMapping("/all")
     public ResponseEntity<List<ChatResponse>> getChats(Authentication authentication){
@@ -79,7 +82,6 @@ public class ChatsController {
         return ResponseEntity.ok(messages);
     }
 
-
     @PostMapping("/create-message")
     public ResponseEntity<MessageResponse> createMessage(Authentication authentication,
                                          @RequestBody MessageRequest request){
@@ -101,5 +103,10 @@ public class ChatsController {
         return ResponseEntity.ok(message);
     }
 
-
+    @GetMapping("/unread")
+    public ResponseEntity<Long> unreadMessages(Authentication authentication){
+        User user = userService.findUserByUsername(authentication.getName());
+        Long unreadCount = messagesService.countUnreadMessages(user);
+        return ResponseEntity.ok(unreadCount);
+    }
 }

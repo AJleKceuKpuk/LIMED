@@ -12,6 +12,7 @@ import java.util.Optional;
 
 @Repository
 public interface ChatsRepository extends JpaRepository<Chats, Long> {
+
         //поиск чатов по типу
         List<Chats> findByType(String type);
 
