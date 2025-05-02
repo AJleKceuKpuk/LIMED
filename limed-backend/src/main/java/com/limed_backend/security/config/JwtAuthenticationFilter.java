@@ -32,8 +32,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private ImplUserDetailsService customUserDetailsService;
     @Autowired
     private TokenService tokenService;
-    @Autowired
-    private TokenRepository tokenRepository;
+
 
     public JwtAuthenticationFilter() {
 

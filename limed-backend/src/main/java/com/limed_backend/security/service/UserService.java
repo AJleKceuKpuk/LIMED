@@ -8,16 +8,17 @@ import com.limed_backend.security.exception.EmailAlreadyExistsException;
 import com.limed_backend.security.exception.InvalidOldPasswordException;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.exception.UsernameAlreadyExistsException;
-import com.limed_backend.security.repository.RoleRepository;
 import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -31,13 +32,13 @@ public class UserService {
     private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final TokenService tokenService;
-    private final RoleRepository roleRepository;
+    private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
+    private final CacheManager cacheManager;
 
     // Создаем сущность пользователя во время регистрации
     public void createAndSaveUser(RegistrationRequest request) {
-        Role userRole = roleRepository.findByName("USER")
-                .orElseThrow(() -> new ResourceNotFoundException("Роль 'USER' не найдена"));
+        Role userRole = roleService.getRole("USER");
 
         User user = User.builder()
                 .username(request.getUsername())
@@ -51,12 +52,14 @@ public class UserService {
     }
 
     // Поиск пользователя имени
+    @Cacheable(value = "userCache", key = "#username")
     public User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
     }
 
     // Поиск пользователя по Id
+    @Cacheable(value = "userCache", key = "#id")
     public User findUserById(Long id){
         return userRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
@@ -85,11 +88,24 @@ public class UserService {
         }
     }
 
+    // обновляем в Redis нашего user
+    private void updateUserCache(User user) {
+        Cache userCache = cacheManager.getCache("userCache");
+        userCache.evict(user.getId());
+        userCache.evict(user.getUsername());
+        userCache.put(user.getId(), user);
+        userCache.put(user.getUsername(), user);
+    }
+
     // обновление статуса пользователя в БД
-    public void updateUserStatus(Long userId, String status) {
+    public void updateUserStatus(Long userId, String newStatus) {
         User user = findUserById(userId);
-        user.setStatus(status);
+        if (newStatus.equals(user.getStatus())) {
+            return;
+        }
+        user.setStatus(newStatus);
         userRepository.save(user);
+        updateUserCache(user);
     }
 
     //обновление последней активности в БД
@@ -97,15 +113,20 @@ public class UserService {
         User user = findUserById(userId);
         user.setLastActivity(activityTime);
         userRepository.save(user);
+        updateUserCache(user);
     }
 
     // Изменение имени пользователя
-    public TokenResponse updateUsername(HttpServletRequest request, String currentUsername, UpdateUsernameRequest userRequest, HttpServletResponse response) {
+    public TokenResponse updateUsername(HttpServletRequest request,
+                                        String currentUsername,
+                                        UpdateUsernameRequest userRequest,
+                                        HttpServletResponse response) {
         User user = findUserByUsername(currentUsername);
         validateUsernameAvailability(userRequest.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
         user.setUsername(userRequest.getNewUsername());
         userRepository.save(user);
+        updateUserCache(user);
         return tokenService.generateAndSetTokens(request, user, response);
     }
 
@@ -115,6 +136,7 @@ public class UserService {
         validateEmailAvailability(request.getNewEmail());
         user.setEmail(request.getNewEmail());
         userRepository.save(user);
+        updateUserCache(user);
         return "Email успешно обновлён";
     }
 
