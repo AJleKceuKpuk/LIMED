@@ -106,7 +106,6 @@ public class JwtCore {
         return getClaims(token).get("tokenType", String.class);
     }
 
-
     // проверка токена на валидность и соответствия типу
     public boolean validateToken(String token, String typeToken) {
         if (token == null || token.trim().isEmpty()) {

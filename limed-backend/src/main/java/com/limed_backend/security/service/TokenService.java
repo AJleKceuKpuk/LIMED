@@ -13,6 +13,9 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
@@ -28,11 +31,12 @@ public class TokenService {
     private static final Logger logger = LoggerFactory.getLogger(TokenService.class);
     private final JwtCore jwtCore;
     private final TokenRepository tokenRepository;
+    private final CacheManager cacheManager;
 
     // Проверяет, что access токен существует в базе и не отозван
     private void validateAccessTokenRecord(Claims accessClaims) {
         String accessJti = accessClaims.getId();
-        Token accessTokenRecord = tokenRepository.findByJti(accessJti);
+        Token accessTokenRecord = getTokenByJti(accessJti);
         if (accessTokenRecord == null || accessTokenRecord.getRevoked()) {
             throw new JwtException("Access токен отозван или не найден");
         }
@@ -107,19 +111,23 @@ public class TokenService {
     }
 
     //Отзыв токена (revoke из БД)
+    @CacheEvict(value = "tokenCache", key = "#jti")
     public void revokeToken(String jti) {
-        Token token = tokenRepository.findByJti(jti);
+        Token token = getTokenByJti(jti);
         if (token != null && !token.getRevoked()) {
-            token.setRevoked(true); // При установке true, метод setRevoked() сам выставит revokedAt
+            token.setRevoked(true);
             tokenRepository.save(token);
         }
     }
 
     //Отзыв всех токенов пользователя и БД
+    @Transactional
     public void revokeAllTokens(String username) {
         List<Token> tokens = tokenRepository.findByUsernameAndRevokedFalse(username);
+        Cache tokenCache = cacheManager.getCache("tokenCache");
         for (Token token : tokens) {
             token.setRevoked(true);
+            tokenCache.evict(token.getJti());
         }
         tokenRepository.saveAll(tokens);
     }
