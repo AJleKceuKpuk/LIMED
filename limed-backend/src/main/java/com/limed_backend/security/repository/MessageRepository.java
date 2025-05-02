@@ -12,6 +12,7 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface MessageRepository extends JpaRepository<Messages, Long> {
 
+    //получаем количество непрочитанных сообщений
     @Query("SELECT COUNT(m) FROM Messages m " +
             "WHERE m.sender <> :user " +
             "AND :user NOT MEMBER OF m.viewedBy")
@@ -19,14 +20,14 @@ public interface MessageRepository extends JpaRepository<Messages, Long> {
 
     // Получаем все сообщения из чата
     @Query("FROM Messages m " +
-            "WHERE m.chatId = :chatId " +
+            "WHERE m.chat.id = :chatId " +
             "ORDER BY m.sendTime DESC")
     Page<Messages> AllMessagesFromChat(@Param("chatId") Long chatId,
                                        Pageable pageable);
 
     // Получаем лишь неудалённые сообщения из чата
     @Query("FROM Messages m " +
-            "WHERE m.chatId = :chatId " +
+            "WHERE m.chat.id = :chatId " +
             "AND m.deleted = false " +
             "ORDER BY m.sendTime DESC")
     Page<Messages> ActiveMessagesFromChat(@Param("chatId") Long chatId,

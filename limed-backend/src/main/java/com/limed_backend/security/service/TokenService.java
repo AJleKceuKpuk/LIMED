@@ -13,6 +13,7 @@ import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -166,6 +167,14 @@ public class TokenService {
     private int cookieLifetime(String refreshToken) {
         Date refreshExpiration = jwtCore.getExpirationFromToken(refreshToken);
         return (int) ((refreshExpiration.getTime() - System.currentTimeMillis()) / 1000);
+    }
+
+
+    // При первом вызове, если записи с данным jti нет в кэше, она будет загружена из репозитория.
+    // Затем результат кэшируется в "tokenCache". Если tokenRepository вернёт null, кэширование не происходит.
+    @Cacheable(value = "tokenCache", key = "#jti", unless = "#result == null")
+    public Token getTokenByJti(String jti) {
+        return tokenRepository.findByJti(jti);
     }
 
 

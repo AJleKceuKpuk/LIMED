@@ -1,5 +1,6 @@
 package com.limed_backend.security.config;
 
+import com.limed_backend.security.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -30,6 +31,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Autowired
     private ImplUserDetailsService customUserDetailsService;
     @Autowired
+    private TokenService tokenService;
+    @Autowired
     private TokenRepository tokenRepository;
 
     public JwtAuthenticationFilter() {
@@ -41,11 +44,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
         // Если запрос идёт на эндпоинт обновления токена, пропускаем проверку
-        if ("/token/refresh".equals(request.getServletPath())) {
-            filterChain.doFilter(request, response);
-            return;
-        }
-        if ("/logout".equals(request.getServletPath())) {
+        if ("/token/refresh".equals(request.getServletPath()) ||
+                "/logout".equals(request.getServletPath())) {
             filterChain.doFilter(request, response);
             return;
         }
@@ -55,7 +55,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(jwt) && jwtCore.validateToken(jwt, null)) {
 
             String jti = jwtCore.getJti(jwt);
-            Token tokenRecord = tokenRepository.findByJti(jti);
+            Token tokenRecord = tokenService.getTokenByJti(jti);
             if (tokenRecord == null || tokenRecord.getRevoked() || tokenRecord.getExpiration().before(new Date())) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write("Token is revoked or invalid.");
