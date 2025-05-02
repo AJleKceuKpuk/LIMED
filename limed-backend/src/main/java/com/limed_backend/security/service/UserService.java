@@ -29,7 +29,6 @@ import java.util.Optional;
 @RequiredArgsConstructor
 public class UserService {
 
-    private final AuthenticationManager authenticationManager;
     private final UserRepository userRepository;
     private final TokenService tokenService;
     private final RoleService roleService;
@@ -149,13 +148,6 @@ public class UserService {
         user.setPassword(passwordEncoder.encode(request.getNewPassword()));
         userRepository.save(user);
         return "Пароль успешно обновлён";
-    }
-
-    // Проверка пользователя
-    public void authenticateUser(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
     }
 
     public boolean isAdmin(User user) {

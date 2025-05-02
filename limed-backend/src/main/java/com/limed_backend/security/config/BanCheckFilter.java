@@ -3,6 +3,7 @@ package com.limed_backend.security.config;
 import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.repository.BlockingRepository;
+import com.limed_backend.security.service.BlockingService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -21,12 +22,12 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 public class BanCheckFilter extends OncePerRequestFilter {
 
     private final UserService userService;
-    private final BlockingRepository blockingRepository;
+    private final BlockingService blockingService;
 
 
-    public BanCheckFilter(UserService userService, BlockingRepository blockingRepository) {
+    public BanCheckFilter(UserService userService, BlockingService blockingService) {
         this.userService = userService;
-        this.blockingRepository = blockingRepository;
+        this.blockingService = blockingService;
     }
 
     @Override
@@ -41,7 +42,7 @@ public class BanCheckFilter extends OncePerRequestFilter {
             }
             User user = userService.findUserByUsername(auth.getName());
             if (user != null) {
-                List<Blocking> activeBlocks = blockingRepository.findActiveBlockings(user, "ban");
+                List<Blocking> activeBlocks = blockingService.allBlockings(user, "ban");
                 if (activeBlocks.stream().findAny().isPresent()) {
                     Blocking banRecord = activeBlocks.get(0);
                     String banReason = banRecord.getReason();

@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -19,6 +21,7 @@ public class AuthService {
     private final JwtCore jwtCore;
     private final TokenService tokenService;
     private final UserService userService;
+    private final AuthenticationManager authenticationManager;
 
 
     // /registration
@@ -32,7 +35,7 @@ public class AuthService {
     // Логика /login
     public TokenResponse login(HttpServletRequest request, LoginRequest loginRequest, HttpServletResponse response) {
         try {
-            userService.authenticateUser(loginRequest);
+            authenticateUser(loginRequest);
         } catch (Exception ex) {
             throw new InvalidUsernameOrPasswordException();
         }
@@ -40,6 +43,14 @@ public class AuthService {
         userService.updateUserStatus(user.getId(), "online");
         return tokenService.generateAndSetTokens(request, user, response);
     }
+
+    // Проверка пользователя
+    public void authenticateUser(LoginRequest request) {
+        authenticationManager.authenticate(
+                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
+        );
+    }
+
 
     // Логика /logout
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {

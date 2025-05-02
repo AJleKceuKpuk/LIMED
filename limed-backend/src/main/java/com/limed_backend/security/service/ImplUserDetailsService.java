@@ -11,15 +11,15 @@ import static org.springframework.security.core.userdetails.User.builder;
 
 @Service
 @RequiredArgsConstructor
-
 public class ImplUserDetailsService implements UserDetailsService {
 
+    private final UserService userService; // Используем кэш
     private final UserRepository userRepository;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new UsernameNotFoundException("Пользователь не найден с именем: " + username));
+        // Сначала проверяем кэш
+        User user = userService.findUserByUsername(username);
 
         return builder()
                 .username(user.getUsername())
