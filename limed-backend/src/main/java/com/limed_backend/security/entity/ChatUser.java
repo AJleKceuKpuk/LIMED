@@ -5,12 +5,18 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.io.Serial;
+import java.io.Serializable;
+
 @Entity
 @Table(name = "chat_users")
 @Data
 @NoArgsConstructor
 @AllArgsConstructor
-public class ChatUser {
+public class ChatUser implements Serializable {
+
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     @EmbeddedId
     private ChatUserId id = new ChatUserId();

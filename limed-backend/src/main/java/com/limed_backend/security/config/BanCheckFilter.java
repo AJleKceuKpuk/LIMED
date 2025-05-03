@@ -2,7 +2,6 @@ package com.limed_backend.security.config;
 
 import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.repository.BlockingRepository;
 import com.limed_backend.security.service.BlockingService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.FilterChain;
@@ -42,7 +41,7 @@ public class BanCheckFilter extends OncePerRequestFilter {
             }
             User user = userService.findUserByUsername(auth.getName());
             if (user != null) {
-                List<Blocking> activeBlocks = blockingService.allBlockings(user, "ban");
+                List<Blocking> activeBlocks = blockingService.findAllBlocksUser(user, "ban");
                 if (activeBlocks.stream().findAny().isPresent()) {
                     Blocking banRecord = activeBlocks.get(0);
                     String banReason = banRecord.getReason();

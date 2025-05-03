@@ -3,7 +3,7 @@ import { jwtDecode } from "jwt-decode";
 
 // Создаём базовый экземпляр Axios
 const api = axios.create({
-  baseURL: "http://192.168.174.239:8080", // URL вашего API
+  baseURL: "https://localhost:8443", // URL вашего API
   withCredentials: true, // Автоматически передаём куки с запросами
 });
 

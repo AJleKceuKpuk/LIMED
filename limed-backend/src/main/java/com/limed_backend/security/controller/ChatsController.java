@@ -30,7 +30,7 @@ public class ChatsController {
 
     @GetMapping("/all")
     public ResponseEntity<List<ChatResponse>> getChats(Authentication authentication){
-        return ResponseEntity.ok(chatsService.getChats(authentication));
+        return ResponseEntity.ok(chatsService.findUserChats(authentication));
     }
 
     @PostMapping("/create")
@@ -77,7 +77,7 @@ public class ChatsController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Page<MessageResponse> messages = messagesService.getMessagesFromChat(authentication, chatId, size, page);
+        Page<MessageResponse> messages = messagesService.findMessagesFromChat(authentication, chatId, size, page);
 
         return ResponseEntity.ok(messages);
     }

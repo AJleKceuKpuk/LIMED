@@ -24,7 +24,7 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
 
 
-    // /registration
+    // регистрация пользователей
     public String registration(RegistrationRequest request) {
         userService.validateUsernameAvailability(request.getUsername());
         userService.validateEmailAvailability(request.getEmail());
@@ -32,10 +32,12 @@ public class AuthService {
         return "Пользователь зарегистрирован";
     }
 
-    // Логика /login
+    // вход пользователя и его проверка
     public TokenResponse login(HttpServletRequest request, LoginRequest loginRequest, HttpServletResponse response) {
         try {
-            authenticateUser(loginRequest);
+            authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(loginRequest.getUsername(), loginRequest.getPassword())
+            );
         } catch (Exception ex) {
             throw new InvalidUsernameOrPasswordException();
         }
@@ -44,15 +46,7 @@ public class AuthService {
         return tokenService.generateAndSetTokens(request, user, response);
     }
 
-    // Проверка пользователя
-    public void authenticateUser(LoginRequest request) {
-        authenticationManager.authenticate(
-                new UsernamePasswordAuthenticationToken(request.getUsername(), request.getPassword())
-        );
-    }
-
-
-    // Логика /logout
+    // Логика выхода
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
         tokenService.revokeRefreshTokenFromCookies(request, response);
         String accessToken = jwtCore.getJwtFromHeader(request);

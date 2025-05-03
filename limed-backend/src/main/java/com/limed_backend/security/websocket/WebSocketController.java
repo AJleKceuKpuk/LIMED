@@ -38,7 +38,7 @@ public class WebSocketController {
         connectionService.updateLastUserActivity(message.getUserId());
         userService.updateUserStatus(message.getUserId(), message.getStatus());
 
-        List<ContactsResponse> allContacts = contactsService.getContacts(user);
+        List<ContactsResponse> allContacts = contactsService.findAllContacts(user);
         UserStatusRequest update = new UserStatusRequest(message.getUserId(), message.getStatus());
 
         for (ContactsResponse friend : allContacts) {
@@ -55,7 +55,7 @@ public class WebSocketController {
         String destination = "/ws/chat/" + request.getChatId();
         simpMessagingTemplate.convertAndSend(destination, event);
 
-        Chats chat = chatsService.getChatById(request.getChatId());
+        Chats chat = chatsService.findChatById(request.getChatId());
         connectionService.checkUnreadMessagesForChat(chat);
     }
 

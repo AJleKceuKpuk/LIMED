@@ -1,6 +1,5 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.entity.User;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -13,14 +12,11 @@ import static org.springframework.security.core.userdetails.User.builder;
 @RequiredArgsConstructor
 public class ImplUserDetailsService implements UserDetailsService {
 
-    private final UserService userService; // Используем кэш
-    private final UserRepository userRepository;
+    private final UserService userService;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        // Сначала проверяем кэш
         User user = userService.findUserByUsername(username);
-
         return builder()
                 .username(user.getUsername())
                 .password(user.getPassword())

@@ -1,18 +1,15 @@
 package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Requests.*;
-import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
-import com.limed_backend.security.repository.BlockingRepository;
 import com.limed_backend.security.repository.RoleRepository;
 import com.limed_backend.security.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
-import java.time.Duration;
-import java.time.LocalDateTime;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.*;
 
 @Service
@@ -22,77 +19,53 @@ public class AdminService {
     private final UserRepository userRepository;
     private final UserService userService;
     private final RoleRepository roleRepository;
-    private final BlockingRepository blockingRepository;
+    private final TokenService tokenService;
 
     // изменение имени пользователя принудительно
+    @Transactional
     public String editUsername(UpdateUsernameRequest request, Long id){
         User user = userService.findUserById(id);
-        userService.validateUsernameAvailability(request.getNewUsername());
-        user.setUsername(request.getNewUsername());
+
+        userService.validateUsernameAvailability(request.getNewUsername());     //проверяем что имя свободно
+        userService.deleteUserCache(user);                                      //удаляем пользователя из кэша
+        tokenService.revokeAllTokens(user.getUsername());                       //отзываем все токены пользователя
+        user.setUsername(request.getNewUsername());                             //изменяем имя пользователя
+        userService.addUserCache(user);                                         //добавляем обновленного пользователя в кэш
+
         userRepository.save(user);
         return "Имя игрока изменено";
     }
 
     // изменение почты пользователя принудительно
+    @Transactional
     public String editEmail(UpdateEmailRequest request, Long id){
         User user = userService.findUserById(id);
-        userService.validateEmailAvailability(request.getNewEmail());
-        user.setEmail(request.getNewEmail());
-        userRepository.save(user);
+
+        userService.validateEmailAvailability(request.getNewEmail());           //проверка на доступность E-mail
+        user.setEmail(request.getNewEmail());                                   //изменяем E-mail
+        userRepository.save(user);                                              //сохраняем сущность
+        userService.deleteUserCache(user);                                      //удаляем старого юзера из кэша
+        userService.addUserCache(user);                                         //добавляем обновленного юзера в кэш
+
         return "Email игрока сохранен";
     }
 
     // редактировать Роли пользователя
+    @Transactional
     public String editRole(UpdateRoleRequest request, Long id) {
         User user = userService.findUserById(id);
-        Set<Role> newRoles = new HashSet<>();
-        for (String roleName : request.getRoles()) {
-            Role role = roleRepository.findByName(roleName)
+        Set<Role> newRoles = new HashSet<>();                                   //создаем пустой список ролей
+        for (String roleName : request.getRoles()) {                            //проходимся по ролям из запроса
+            Role role = roleRepository.findByName(roleName)                     //если роль существует в бд - добавляем
                     .orElseThrow(() -> new ResourceNotFoundException("Роль '" + roleName + "' не найдена"));
             newRoles.add(role);
         }
-        user.setRoles(newRoles);
+        userService.deleteUserCache(user);                                      //удаляем старого юзера из кэша
+        user.setRoles(newRoles);                                                //изменяем роли
+        userService.addUserCache(user);                                         //добавляем обновленного юзера в кэш
+
         userRepository.save(user);
         return "Роли пользователя успешно обновлены!";
-    }
-
-    // выдать блокировку пользователя
-    public String giveBlock(GiveBlockRequest request, Authentication authentication) {
-        User admin = userService.findUserByUsername(authentication.getName());
-        User user = userService.findUserByUsername(request.getUsername());
-
-        LocalDateTime startTime = LocalDateTime.now();
-        Duration duration = DurationParser.parseDuration(request.getDuration());
-        LocalDateTime endTime = startTime.plus(duration);
-
-        Blocking block = Blocking.builder()
-                .blockingType(request.getBlockingType())
-                .startTime(startTime)
-                .endTime(endTime)
-                .reason(request.getReason())
-                .user(user)
-                .blockedBy(admin)
-                .build();
-        blockingRepository.save(block);
-        return "Пользователь " + user.getUsername() + " заблокирован до " + endTime;
-    }
-
-    // снять блокировку пользователя
-    public String unblock(UnblockRequest request, Authentication authentication) {
-        User user = userService.findUserByUsername(request.getUsername());
-        User admin = userService.findUserByUsername(authentication.getName());
-        List<Blocking> activeBlocks = blockingRepository
-                .findActiveBlockings(user, request.getBlockingType());
-        if (activeBlocks.isEmpty()) {
-            return "Нет активных блокировок типа " + request.getBlockingType()
-                    + " для пользователя " + user.getUsername();
-        }
-        activeBlocks.forEach(block -> {
-            block.setRevokedBlock(true);
-            block.setRevokedBy(admin);
-        });
-        blockingRepository.saveAll(activeBlocks);
-        return "Пользователь " + user.getUsername() + " разблокирован для типа " + request.getBlockingType();
     }
 
 }

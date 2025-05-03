@@ -58,25 +58,25 @@ public class UserController {
     @GetMapping("/contacts")
     public ResponseEntity<List<ContactsResponse>> getContacts(Authentication authentication) {
         User user = userService.findUserByUsername(authentication.getName());
-        List<ContactsResponse> friends = contactsService.getContacts(user);
+        List<ContactsResponse> friends = contactsService.findAllContacts(user);
         return ResponseEntity.ok(friends);
     }
 
     @GetMapping("/contacts/pending")
     public ResponseEntity<List<ContactsPendingResponse>> getPendingContacts(Authentication authentication) {
-        List<ContactsPendingResponse> pendingFriends = contactsService.getPendingContacts(authentication);
+        List<ContactsPendingResponse> pendingFriends = contactsService.findPendingContacts(authentication);
         return ResponseEntity.ok(pendingFriends);
     }
 
     @GetMapping("/contacts/invitation")
     public ResponseEntity<List<ContactsPendingResponse>> getInvitationContacts(Authentication authentication) {
-        List<ContactsPendingResponse> invitationFriends = contactsService.getInvitationContacts(authentication);
+        List<ContactsPendingResponse> invitationFriends = contactsService.findInvitationContacts(authentication);
         return ResponseEntity.ok(invitationFriends);
     }
 
     @GetMapping("/contacts/ignore")
     public ResponseEntity<List<ContactsPendingResponse>> getIgnoreList(Authentication authentication) {
-        List<ContactsPendingResponse> invitationFriends = contactsService.getIgnoreList(authentication);
+        List<ContactsPendingResponse> invitationFriends = contactsService.findIgnoreContacts(authentication);
         return ResponseEntity.ok(invitationFriends);
     }
 

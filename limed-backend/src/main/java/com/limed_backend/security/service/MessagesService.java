@@ -35,15 +35,15 @@ public class MessagesService {
 
 
     //получаем сообщение по ID
-    public Messages getMessageById(Long id){
+    public Messages findMessageById(Long id){
         return messageRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Сообщение не найдено"));
     }
 
     //получить все сообщения с чата
-    public Page<MessageResponse> getMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
+    public Page<MessageResponse> findMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
         User user = userService.findUserByUsername(authentication.getName());
-        Chats chat = chatsService.getChatById(chatId);
+        Chats chat = chatsService.findChatById(chatId);
         boolean isMember = chat.getChatUsers()
                 .stream()
                 .anyMatch(chatUser -> chatUser.getUser().getId().equals(user.getId()));
@@ -71,7 +71,7 @@ public class MessagesService {
     }
 
     //получить все сообщения пользователя
-    public Page<MessageResponse> getMessagesFromUser(Authentication authentication, Long userId, int size, int page){
+    public Page<MessageResponse> findMessagesFromUser(Authentication authentication, Long userId, int size, int page){
         User admin = userService.findUserByUsername(authentication.getName());
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
         if (!userService.isAdmin(admin)) {
@@ -81,12 +81,13 @@ public class MessagesService {
         return messagesPage.map(messageMapper::toMessageResponse);
     }
 
+
     //Создаем сообщение
     public MessageResponse createMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
         Chats chat;
         if (request.getChatId() != null){
-            chat = chatsService.getChatById(request.getChatId());
+            chat = chatsService.findChatById(request.getChatId());
             if ("Deleted".equals(chat.getStatus())){
                 if ("PRIVATE".equals(chat.getType())){
                     chat.setStatus("Active");
@@ -108,7 +109,7 @@ public class MessagesService {
                     createChatRequest.setUsersId(users);
                     createChatRequest.setType("PRIVATE");
                     ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
-                    chat = chatsService.getChatById(chatResponse.getId());
+                    chat = chatsService.findChatById(chatResponse.getId());
 
                 }else if ("Deleted".equals(chat.getStatus())){
                     chat.setStatus("Active");
@@ -120,7 +121,7 @@ public class MessagesService {
                 createChatRequest.setType("GROUP");
                 createChatRequest.setName(sender.getUsername() + " Chats automatically");
                 ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
-                chat = chatsService.getChatById(chatResponse.getId());
+                chat = chatsService.findChatById(chatResponse.getId());
             }
         }
         Messages message = Messages.builder()
@@ -140,7 +141,7 @@ public class MessagesService {
     //изменение сообщения
     public MessageResponse editMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
-        Messages message = getMessageById(request.getId());
+        Messages message = findMessageById(request.getId());
         if (!sender.equals(message.getSender())){
             throw new RuntimeException("Только владелец может изменить сообщение");
         }
@@ -154,7 +155,7 @@ public class MessagesService {
     //удаление сообщения
     public String deleteMessage(Authentication authentication, MessageRequest request){
         User sender = userService.findUserByUsername(authentication.getName());
-        Messages message = getMessageById(request.getId());
+        Messages message = findMessageById(request.getId());
         if (!sender.equals(message.getSender())){
             throw new RuntimeException("Только владелец может удалить сообщение!");
         }
@@ -166,7 +167,7 @@ public class MessagesService {
     //метод добавляет имя текущего пользователя в список посмотревших сообщение
     public MessageResponse viewMessage(Authentication authentication, MessageRequest request){
         User user = userService.findUserByUsername(authentication.getName());
-        Messages message = getMessageById(request.getId());
+        Messages message = findMessageById(request.getId());
         boolean isSender = message.getSender().getId().equals(user.getId());
         if (isSender){
             throw new RuntimeException("Просмотрел отправитель");
@@ -178,12 +179,9 @@ public class MessagesService {
         return messageMapper.toMessageResponse(message);
     }
 
+
     public long countUnreadMessages(User user) {
         return messageRepository.countUnreadMessagesForUser(user);
     }
-
-
-
-
 
 }

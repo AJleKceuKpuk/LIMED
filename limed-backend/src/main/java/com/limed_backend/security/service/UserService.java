@@ -35,20 +35,6 @@ public class UserService {
     private final PasswordEncoder passwordEncoder;
     private final CacheManager cacheManager;
 
-    // Создаем сущность пользователя во время регистрации
-    public void createAndSaveUser(RegistrationRequest request) {
-        Role userRole = roleService.getRole("USER");
-
-        User user = User.builder()
-                .username(request.getUsername())
-                .email(request.getEmail())
-                .password(passwordEncoder.encode(request.getPassword()))
-                .roles(Collections.singleton(userRole))
-                .status("offline")
-                .dateRegistration(LocalDate.now())
-                .build();
-        userRepository.save(user);
-    }
 
     // Поиск пользователя имени
     @Cacheable(value = "userCache", key = "#username")
@@ -87,13 +73,24 @@ public class UserService {
         }
     }
 
-    // обновляем в Redis нашего user
-    private void updateUserCache(User user) {
-        Cache userCache = cacheManager.getCache("userCache");
-        userCache.evict(user.getId());
-        userCache.evict(user.getUsername());
-        userCache.put(user.getId(), user);
-        userCache.put(user.getUsername(), user);
+    //проверяем что это действительно Админ
+    public boolean isAdmin(User user) {
+        return user.getRoles().stream().anyMatch(role -> "ADMIN".equals(role.getName()));
+    }
+
+    // Создаем сущность пользователя во время регистрации
+    public void createAndSaveUser(RegistrationRequest request) {
+        Role userRole = roleService.getRole("USER");
+
+        User user = User.builder()
+                .username(request.getUsername())
+                .email(request.getEmail())
+                .password(passwordEncoder.encode(request.getPassword()))
+                .roles(Collections.singleton(userRole))
+                .status("offline")
+                .dateRegistration(LocalDate.now())
+                .build();
+        userRepository.save(user);
     }
 
     // обновление статуса пользователя в БД
@@ -104,7 +101,8 @@ public class UserService {
         }
         user.setStatus(newStatus);
         userRepository.save(user);
-        updateUserCache(user);
+        deleteUserCache(user);
+        addUserCache(user);
     }
 
     //обновление последней активности в БД
@@ -112,7 +110,8 @@ public class UserService {
         User user = findUserById(userId);
         user.setLastActivity(activityTime);
         userRepository.save(user);
-        updateUserCache(user);
+        deleteUserCache(user);
+        addUserCache(user);
     }
 
     // Изменение имени пользователя
@@ -123,9 +122,12 @@ public class UserService {
         User user = findUserByUsername(currentUsername);
         validateUsernameAvailability(userRequest.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
+
+        deleteUserCache(user);
         user.setUsername(userRequest.getNewUsername());
+
         userRepository.save(user);
-        updateUserCache(user);
+        addUserCache(user);
         return tokenService.generateAndSetTokens(request, user, response);
     }
 
@@ -135,7 +137,8 @@ public class UserService {
         validateEmailAvailability(request.getNewEmail());
         user.setEmail(request.getNewEmail());
         userRepository.save(user);
-        updateUserCache(user);
+        deleteUserCache(user);
+        addUserCache(user);
         return "Email успешно обновлён";
     }
 
@@ -150,8 +153,23 @@ public class UserService {
         return "Пароль успешно обновлён";
     }
 
-    public boolean isAdmin(User user) {
-        return user.getRoles().stream().anyMatch(role -> "ADMIN".equals(role.getName()));
+    // добавляем в кэш пользователя
+    public void addUserCache(User user) {
+        Cache userCache = cacheManager.getCache("userCache");
+        if (userCache != null) {
+            userCache.put(user.getId(), user);
+            userCache.put(user.getUsername(), user);
+        }
     }
+
+    //удаляем пользователя из кэша
+    public void deleteUserCache(User user){
+        Cache userCache = cacheManager.getCache("userCache");
+        if (userCache != null) {
+            userCache.evict(user.getId());
+            userCache.evict(user.getUsername());
+        }
+    }
+
 }
 

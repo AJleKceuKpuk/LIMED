@@ -5,13 +5,9 @@ import com.limed_backend.security.dto.Responses.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.mapper.ChatsMapper;
 import com.limed_backend.security.mapper.UserMapper;
 import com.limed_backend.security.repository.UserRepository;
-import com.limed_backend.security.service.AdminService;
-import com.limed_backend.security.service.ChatsService;
-import com.limed_backend.security.service.MessagesService;
-import com.limed_backend.security.service.UserService;
+import com.limed_backend.security.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
@@ -33,6 +29,7 @@ public class AdminController {
     private final UserService userService;
     private final ChatsService chatsService;
     private final MessagesService messagesService;
+    private final BlockingService blockingService;
 
     @GetMapping("/get-allusers")
     public List<UserResponse> getAllUsers() {
@@ -73,20 +70,20 @@ public class AdminController {
     @PostMapping("/give-blocked")
     public ResponseEntity<String> giveMuted(@RequestBody GiveBlockRequest request,
                                             Authentication authentication){
-        String result = adminService.giveBlock(request, authentication);
+        String result = blockingService.giveBlock(request, authentication);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/unblock")
     public ResponseEntity<String> unblock(@RequestBody UnblockRequest request,
                                           Authentication authentication){
-        String result = adminService.unblock(request, authentication);
+        String result = blockingService.unblock(request, authentication);
         return ResponseEntity.ok(result);
     }
 
     @GetMapping("/chats")
     public List<ChatResponse> getAllChats(Authentication authentication){
-        return chatsService.getAllChats(authentication);
+        return chatsService.findAllChats(authentication);
     }
 
     @PostMapping("/chats/activate/{id}")
@@ -116,7 +113,7 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
 
-        Page<MessageResponse> messages = messagesService.getMessagesFromChat(authentication, chatId, size, page);
+        Page<MessageResponse> messages = messagesService.findMessagesFromChat(authentication, chatId, size, page);
 
         return ResponseEntity.ok(messages);
     }
@@ -128,7 +125,7 @@ public class AdminController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size){
 
-        Page<MessageResponse> messages = messagesService.getMessagesFromUser(authentication, id, size, page);
+        Page<MessageResponse> messages = messagesService.findMessagesFromUser(authentication, id, size, page);
         return ResponseEntity.ok(messages);
     }
 }

@@ -17,7 +17,7 @@ function addRefreshSubscriber(callback) {
 }
 
 const axiosInstance = axios.create({
-  baseURL: 'https://192.168.0.180:8443',
+  baseURL: 'https://localhost:8443',
   withCredentials: true,
 });
 

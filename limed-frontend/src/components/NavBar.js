@@ -82,7 +82,7 @@ const NavBar = () => {
     if (!userId) return;
     if (hasSubscribedRef.current) return;
     
-    const socket = new SockJS(`https://192.168.0.180:8443/ws/online?userId=${userId}`);
+    const socket = new SockJS(`https://localhost:8443/ws/online?userId=${userId}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
       onConnect: () => {
