@@ -35,10 +35,12 @@ public class Chats implements Serializable {
     private String status;
 
     // Участники чата через сущность ChatUser
-    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<ChatUser> chatUsers = new ArrayList<>();
 
     // Сообщения в чате
+    @Builder.Default
     @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Messages> messages = new ArrayList<>();
+
 }

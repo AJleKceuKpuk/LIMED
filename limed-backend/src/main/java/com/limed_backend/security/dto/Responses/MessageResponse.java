@@ -1,7 +1,6 @@
 package com.limed_backend.security.dto.Responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.limed_backend.security.entity.User;
 import lombok.Data;
 
 import java.time.LocalDateTime;

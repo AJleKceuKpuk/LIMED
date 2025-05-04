@@ -55,17 +55,18 @@ public class MessagesService {
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
         Page<Messages> messagesPage;
 
-        if (!isMember) {
-            messagesPage = messageRepository.AllMessagesFromChat(chatId, pageable);
-        } else {
+        if (isMember) {
             messagesPage = messageRepository.ActiveMessagesFromChat(chatId, pageable);
             messagesPage.forEach(message -> {
                 if (!message.getSender().getId().equals(user.getId())) {
                     MessageRequest request = new MessageRequest();
                     request.setId(message.getId());
-                    viewMessage(authentication, request);
+                    //viewMessage(authentication, request);
                 }
             });
+        } else {
+            messagesPage = messageRepository.AllMessagesFromChat(chatId, pageable);
+
         }
         return messagesPage.map(messageMapper::toMessageResponse);
     }
@@ -172,7 +173,9 @@ public class MessagesService {
         if (isSender){
             throw new RuntimeException("Просмотрел отправитель");
         }
-        if (!message.getViewedBy().contains(user)) {
+        if (message.getViewedBy().stream().noneMatch(u -> u.equals(user))) {
+            System.out.println(user.getUsername());
+            System.out.println("user not found by view");
             message.getViewedBy().add(user);
             messageRepository.save(message);
         }

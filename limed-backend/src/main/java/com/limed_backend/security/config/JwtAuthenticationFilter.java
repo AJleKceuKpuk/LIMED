@@ -6,7 +6,6 @@ import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import com.limed_backend.security.entity.Token;
-import com.limed_backend.security.repository.TokenRepository;
 import com.limed_backend.security.service.ImplUserDetailsService;
 import lombok.AllArgsConstructor;
 import lombok.NonNull;
@@ -42,7 +41,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
-        // Если запрос идёт на эндпоинт обновления токена, пропускаем проверку
+        // Если запрос идёт на энд-поинт обновления токена, пропускаем проверку
         if ("/token/refresh".equals(request.getServletPath()) ||
                 "/logout".equals(request.getServletPath())) {
             filterChain.doFilter(request, response);

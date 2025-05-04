@@ -98,7 +98,7 @@ public class TokenService {
         return issueAccessToken(request, usernameFromAccess);
     }
 
-    // Извлекает Refresh Токен из Куки
+    // Извлекает Refresh Токен Куки
     private String extractRefreshTokenFromCookies(HttpServletRequest request) {
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {

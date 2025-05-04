@@ -39,11 +39,13 @@ public class ConnectionService {
     //Запускается раз в 30 секунд
     @Scheduled(fixedDelay = 30000)
     public void activityCheck() {
+        System.out.println("check");
         long currentTime = System.currentTimeMillis();
         long inactivityThreshold = 60000;
 
         userLastActivity.forEach((userId, lastActivityMillis) -> { //проходим по всей Map и смотрим юзера на последнюю активность
             if (currentTime - lastActivityMillis > inactivityThreshold) {
+                User user = userService.findUserById(userId);
                 userService.updateUserStatus(userId, "away");
                 LocalDateTime recordedLastActivity = java.time.Instant
                         .ofEpochMilli(lastActivityMillis)
@@ -51,7 +53,7 @@ public class ConnectionService {
                         .toLocalDateTime();
                 userService.updateLastActivity(userId, recordedLastActivity);
                 UserStatusRequest statusUpdate = new UserStatusRequest(userId, "away");
-                messagingTemplate.convertAndSend("/ws/online/users/" + userId , statusUpdate); //возврат ответа клиенту
+                messagingTemplate.convertAndSend("/ws/online/" + user.getUsername() , statusUpdate); //возврат ответа клиенту
                 System.out.println("User " + userId + " inactive for "
                         + (currentTime - lastActivityMillis) + " ms. Status set to AWAY.");
             }

@@ -112,7 +112,7 @@ public class AdminController {
             @PathVariable Long chatId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-
+        System.out.println("/chat id messages");
         Page<MessageResponse> messages = messagesService.findMessagesFromChat(authentication, chatId, size, page);
 
         return ResponseEntity.ok(messages);

@@ -45,7 +45,7 @@ public class ContactsService {
 
     //=====================================================//
     // Список всех друзей пользователя
-    @Cacheable(value = "ContactsCache", key = "#userId")
+    @Cacheable(value = "ContactsCache", key = "#user.id")
     public List<ContactsResponse> findAllContacts(User user) {
         List<Contacts> contacts = contactsRepository.findAcceptedByUser(user.getId());
         return contacts.stream()

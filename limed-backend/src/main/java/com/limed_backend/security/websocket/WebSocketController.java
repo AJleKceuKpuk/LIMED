@@ -40,12 +40,14 @@ public class WebSocketController {
 
         List<ContactsResponse> allContacts = contactsService.findAllContacts(user);
         UserStatusRequest update = new UserStatusRequest(message.getUserId(), message.getStatus());
-
+        simpMessagingTemplate.convertAndSend("/ws/online/" + user.getUsername(), update);
         for (ContactsResponse friend : allContacts) {
             String destination = "/ws/online/" + friend.getUsername();
             simpMessagingTemplate.convertAndSend(destination, update);
         }
     }
+
+
 
     @MessageMapping("/chat/send")
     public void sendMessage(Authentication authentication, MessageRequest request) {

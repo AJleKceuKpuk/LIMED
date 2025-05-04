@@ -12,9 +12,8 @@ import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.Hibernate;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.cache.Cache;
@@ -46,8 +45,10 @@ public class UserService {
     // Поиск пользователя по Id
     @Cacheable(value = "userCache", key = "#id")
     public User findUserById(Long id){
-        return userRepository.findById(id).
+        User user = userRepository.findById(id).
                 orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+        //Hibernate.initialize(user.getBlockings());
+        return user;
     }
 
     // Проверка доступности имени

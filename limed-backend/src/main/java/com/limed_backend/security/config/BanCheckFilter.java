@@ -43,7 +43,7 @@ public class BanCheckFilter extends OncePerRequestFilter {
             if (user != null) {
                 List<Blocking> activeBlocks = blockingService.findAllBlocksUser(user, "ban");
                 if (activeBlocks.stream().findAny().isPresent()) {
-                    Blocking banRecord = activeBlocks.get(0);
+                    Blocking banRecord = activeBlocks.getFirst();
                     String banReason = banRecord.getReason();
                     response.setContentType("text/plain; charset=UTF-8");
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);

@@ -79,38 +79,41 @@ const NavBar = () => {
 
   // Подключение к WebSocket через SockJS и STOMP, если userId получен и подписка еще не создана
   useEffect(() => {
-    if (!userId) return;
+    if (!userId || !username) return;
     if (hasSubscribedRef.current) return;
     
-    const socket = new SockJS(`https://localhost:8443/ws/online?userId=${userId}`);
+    const socket = new SockJS(`https://localhost:8443/ws?userId=${userId}`);
     const stompClient = new Client({
       webSocketFactory: () => socket,
       onConnect: () => {
-        stompClientRef.current = stompClient;
-        stompClient.subscribe(`/ws/online/users/${userId}`, (message) => {
+        // Подписываемся на канал, куда сервер отправляет обновления статуса:
+        stompClient.subscribe(`/ws/online/${username}`, (message) => {
           if (message.body) {
             try {
               const payload = JSON.parse(message.body);
               if (payload.status) {
                 setUserStatus(payload.status);
               }
-            } catch (error) {
-              // ошибка разбора без вывода в консоль
+            } catch (err) {
+              console.error("Ошибка разбора сообщения:", err);
             }
           }
         });
         hasSubscribedRef.current = true;
+        // Отправка первого сообщения об онлайн-статусе
         const onlineMessage = { userId, status: "online" };
         stompClient.publish({
           destination: '/ws/online/update',
           body: JSON.stringify(onlineMessage)
         });
+        console.log("Подключение установлено, онлайн-статус отправлен:", onlineMessage);
       },
-      onStompError: () => {
-        // обработка ошибки без вывода в консоль
+      onStompError: (frame) => {
+        console.error("Ошибка STOMP:", frame);
       }
     });
     stompClient.activate();
+    stompClientRef.current = stompClient;
 
     return () => {
       if (stompClientRef.current) {
@@ -118,7 +121,7 @@ const NavBar = () => {
         hasSubscribedRef.current = false;
       }
     };
-  }, [userId]);
+  }, [userId, username]);
 
   // Глобальный обработчик кликов – регистрируется один раз при монтировании,
   // использует актуальное значение userId из userIdRef

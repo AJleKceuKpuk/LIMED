@@ -11,6 +11,8 @@ import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.ChatsMapper;
 import com.limed_backend.security.repository.ChatUserRepository;
 import com.limed_backend.security.repository.ChatsRepository;
+import jakarta.persistence.EntityManager;
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
@@ -31,6 +33,7 @@ public class ChatsService {
     private final ChatsMapper chatsMapper;
     private final ChatUserRepository chatUserRepository;
     private final CacheManager cacheManager;
+    private final EntityManager entityManager;
 
     //=====================================================//
     // поиск чата по Id
@@ -95,15 +98,14 @@ public class ChatsService {
 
     //=====================================================//
     //создание чата
+    @Transactional
     public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
         User creator = userService.findUserByUsername(authentication.getName());
         String type = request.getType();
-        //добавляем всех пользователей в список
         Set<Long> usersId = new HashSet<>();
         if (request.getUsersId() != null) {
             usersId.addAll(request.getUsersId());
         }
-        //не забываем про создателя
         usersId.add(creator.getId());
 
         List<User> users = new ArrayList<>();
@@ -132,10 +134,13 @@ public class ChatsService {
                 .build();
 
         List<ChatUser> chatUsers = new ArrayList<>();
+        // Здесь гарантируем, что для каждого user получаем управляемую сущность
         for (User user : users) {
+            // Если user уже отсоединён, можно переподключить его, например:
+            User managedUser = entityManager.find(User.class, user.getId());
             ChatUser chatUser = new ChatUser();
             chatUser.setChat(chat);
-            chatUser.setUser(user);
+            chatUser.setUser(managedUser);
             chatUser.setStatus("Active");
             chatUsers.add(chatUser);
         }
@@ -143,6 +148,7 @@ public class ChatsService {
         chatRepository.save(chat);
         return chatsMapper.toChatResponse(chat);
     }
+
 
     //изменение названия чата
     public ChatResponse renameChat(Authentication authentication, RenameChatRequest request) {
@@ -309,7 +315,7 @@ public class ChatsService {
     //=====================================================//
     //общая проверка
     private void checkCreator(User currentUser, Chats chat) {
-        if (!isCreator(currentUser, chat) && userService.isAdmin(currentUser)) {
+        if (!isCreator(currentUser, chat) && !userService.isAdmin(currentUser)) {
             throw new RuntimeException("Только создатель чата или администратор могут выполнять эту операцию");
         }
     }

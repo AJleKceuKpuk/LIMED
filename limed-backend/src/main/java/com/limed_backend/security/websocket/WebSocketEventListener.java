@@ -8,6 +8,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Component
 @RequiredArgsConstructor
@@ -22,10 +23,10 @@ public class WebSocketEventListener {
 
         // Пытаемся извлечь сначала из атрибутов
         headerAccessor.getSessionAttributes();
-        Object userIdObj = headerAccessor.getSessionAttributes().get("userId");
+        Object userIdObj = Objects.requireNonNull(headerAccessor.getSessionAttributes()).get("userId");
         if (userIdObj == null) {
             headerAccessor.getUser();
-            userIdObj = headerAccessor.getUser().getName();
+            userIdObj = Objects.requireNonNull(headerAccessor.getUser()).getName();
         }
 
         if (userIdObj != null) {

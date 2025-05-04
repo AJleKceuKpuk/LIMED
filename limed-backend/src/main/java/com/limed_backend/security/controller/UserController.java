@@ -122,11 +122,4 @@ public class UserController {
         return ResponseEntity.ok(resultMessage);
     }
 
-    @GetMapping("/message-new")
-    public ResponseEntity<Long> countMessage(Authentication authentication){
-        User user = userService.findUserByUsername(authentication.getName());
-        Long result = messagesService.countUnreadMessages(user);
-        return ResponseEntity.ok(result);
-    }
-
 }

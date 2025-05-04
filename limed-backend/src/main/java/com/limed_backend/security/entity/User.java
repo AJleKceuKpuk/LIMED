@@ -53,7 +53,7 @@ public class User implements Serializable {
     )
     private Set<Role> roles;
 
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Blocking> blockings = new ArrayList<>();
 
     @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -73,4 +73,21 @@ public class User implements Serializable {
     // Сообщения, просмотренные пользователем
     @ManyToMany(mappedBy = "viewedBy")
     private List<Messages> viewedMessages = new ArrayList<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof User other)) return false;
+        if (this.id == null || other.getId() == null) {
+            return false;
+        }
+        return this.id.equals(other.getId());
+    }
+
+
+    @Override
+    public int hashCode() {
+        // Если id равен null, можно вернуть константу, либо 0
+        return (id != null) ? id.hashCode() : 0;
+    }
 }

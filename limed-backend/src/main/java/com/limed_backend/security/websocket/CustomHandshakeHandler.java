@@ -7,6 +7,7 @@ import org.springframework.web.socket.server.support.DefaultHandshakeHandler;
 
 import java.security.Principal;
 import java.util.Map;
+import java.util.Objects;
 
 public class CustomHandshakeHandler extends DefaultHandshakeHandler {
 
@@ -19,6 +20,6 @@ public class CustomHandshakeHandler extends DefaultHandshakeHandler {
             String userId = userIdObj.toString();
             return () -> userId;
         }
-        return super.determineUser(request, wsHandler, attributes);
+        return Objects.requireNonNull(super.determineUser(request, wsHandler, attributes));
     }
 }
