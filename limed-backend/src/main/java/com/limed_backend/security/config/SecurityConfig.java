@@ -1,6 +1,7 @@
     package com.limed_backend.security.config;
 
     import com.limed_backend.security.service.BlockingService;
+    import com.limed_backend.security.service.UserCacheService;
     import com.limed_backend.security.service.UserService;
     import lombok.RequiredArgsConstructor;
     import org.springframework.context.annotation.Bean;
@@ -36,8 +37,8 @@
         }
 
         @Bean
-        public BanCheckFilter banCheckFilter(UserService userService, BlockingService blockingService) {
-            return new BanCheckFilter(userService, blockingService);
+        public BanCheckFilter banCheckFilter(BlockingService blockingService, UserCacheService userCache) {
+            return new BanCheckFilter(blockingService, userCache);
         }
 
         @Bean

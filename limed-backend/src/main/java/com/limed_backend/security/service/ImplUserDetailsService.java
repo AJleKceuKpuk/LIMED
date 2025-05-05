@@ -12,11 +12,11 @@ import static org.springframework.security.core.userdetails.User.builder;
 @RequiredArgsConstructor
 public class ImplUserDetailsService implements UserDetailsService {
 
-    private final UserService userService;
+    private final UserCacheService userCache;
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        User user = userService.findUserByUsername(username);
+        User user = userCache.findUserByUsername(username);
         return builder()
                 .username(user.getUsername())
                 .password(user.getPassword())

@@ -26,6 +26,7 @@ public class ContactsService {
     private final ContactsRepository contactsRepository;
     private final ContactsMapper contactsMapper;
     private final CacheManager cacheManager;
+    private final UserCacheService userCache;
 
     public void evictContactsCaches(User user) {
         Cache contactsCache = cacheManager.getCache("ContactsCache");
@@ -56,7 +57,7 @@ public class ContactsService {
     // Исходящие заявки
     @Cacheable(value = "ContactsCache", key = "#authentication.name + '-Pending'")
     public List<ContactsPendingResponse> findPendingContacts(Authentication authentication) {
-        User sender = userService.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserByUsername(authentication.getName());
         List<Contacts> outgoingRequests = contactsRepository.findBySender_IdAndStatus(sender.getId(), "Pending");
         return outgoingRequests.stream()
                 .map(contacts -> {
@@ -72,7 +73,7 @@ public class ContactsService {
     // Входящие заявки
     @Cacheable(value = "ContactsCache", key = "#authentication.name + '-Invitation'")
     public List<ContactsPendingResponse> findInvitationContacts(Authentication authentication) {
-        User receiver = userService.findUserByUsername(authentication.getName());
+        User receiver = userCache.findUserByUsername(authentication.getName());
         List<Contacts> incomingRequests = contactsRepository.findByReceiver_IdAndStatus(receiver.getId(), "Pending");
         return incomingRequests.stream()
                 .map(contacts -> {
@@ -88,7 +89,7 @@ public class ContactsService {
     //Черный список
     @Cacheable(value = "ContactsCache", key = "#authentication.name + '-Ignore'")
     public List<ContactsPendingResponse> findIgnoreContacts(Authentication authentication) {
-        User sender = userService.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserByUsername(authentication.getName());
         List<Contacts> outgoingRequests = contactsRepository.findBySender_IdAndStatus(sender.getId(), "Ignore");
         return outgoingRequests.stream()
                 .map(contacts -> {
@@ -119,8 +120,8 @@ public class ContactsService {
     //=====================================================//
     // Метод добавления дружбы
     public String addContacts(Authentication authentication, Long receiverId) {
-        User sender = userService.findUserByUsername(authentication.getName());
-        User receiver = userService.findUserById(receiverId);
+        User sender = userCache.findUserByUsername(authentication.getName());
+        User receiver = userCache.findUserById(receiverId);
 
         if (sender.getId().equals(receiverId)) {
             return "Вы не можете себе отправить дружбу";
@@ -166,13 +167,13 @@ public class ContactsService {
 
     //Добавить в черный список
     public String addIgnore(Authentication authentication, Long receiverId) {
-        User sender = userService.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserByUsername(authentication.getName());
 
         if (sender.getId().equals(receiverId)) {
             return "Вы не можете игнорировать себя";
         }
 
-        User receiver = userService.findUserById(receiverId);
+        User receiver = userCache.findUserById(receiverId);
         if (isAcceptedContacts(sender.getId(), receiver.getId())) {
             return "Пользователь является вашим другом";
         }
@@ -205,8 +206,8 @@ public class ContactsService {
 
     // Метод принятия дружбы
     public String acceptContacts(Authentication authentication, Long senderId) {
-        User receiver = userService.findUserByUsername(authentication.getName());
-        User sender = userService.findUserById(senderId);
+        User receiver = userCache.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserById(senderId);
 
         if (isAcceptedContacts(senderId, receiver.getId())) {
             return "Пользователь уже является вашим другом";
@@ -228,8 +229,8 @@ public class ContactsService {
 
     // Метод отказа от дружбы (отклонения входящего предложения)
     public String cancelContacts(Authentication authentication, Long senderId) {
-        User receiver = userService.findUserByUsername(authentication.getName());
-        User sender = userService.findUserById(senderId);
+        User receiver = userCache.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserById(senderId);
         Optional<Contacts> contactsInvitation = findDirectStatus(senderId, receiver.getId(), "Pending");
         if (contactsInvitation.isEmpty()) {
             throw new ResourceNotFoundException("У Вас нет предложений для дружбы от пользователя с id " + senderId);
@@ -242,8 +243,8 @@ public class ContactsService {
 
     // Метод удаления друга
     public String deleteContacts(Authentication authentication, Long senderId) {
-        User receiver = userService.findUserByUsername(authentication.getName());
-        User sender = userService.findUserById(senderId);
+        User receiver = userCache.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserById(senderId);
         if (receiver.getId().equals(senderId)) {
             return "Вы являетесь этим пользователем, удалить невозможно";
         }
@@ -259,8 +260,8 @@ public class ContactsService {
 
     //Удалить из черного списка
     public String deleteIgnore(Authentication authentication, Long receiverId) {
-        User sender = userService.findUserByUsername(authentication.getName());
-        User receiver = userService.findUserById(receiverId);
+        User sender = userCache.findUserByUsername(authentication.getName());
+        User receiver = userCache.findUserById(receiverId);
 
         Optional<Contacts> ignoreUser = findDirectStatus(sender.getId(), receiverId, "Ignore");
         if (ignoreUser.isEmpty()) {

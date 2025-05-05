@@ -22,6 +22,7 @@ public class AuthService {
     private final TokenService tokenService;
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
+    private final UserCacheService userCache;
 
 
     // регистрация пользователей
@@ -41,7 +42,7 @@ public class AuthService {
         } catch (Exception ex) {
             throw new InvalidUsernameOrPasswordException();
         }
-        User user = userService.findUserByUsername(loginRequest.getUsername());
+        User user = userCache.findUserByUsername(loginRequest.getUsername());
         userService.updateUserStatus(user.getId(), "online");
         return tokenService.generateAndSetTokens(request, user, response);
     }
@@ -53,7 +54,7 @@ public class AuthService {
         if (accessToken == null){
             return ResponseEntity.ok("Без авторизации нельзя");
         }
-        User user = userService.findUserByUsername(jwtCore.getUsernameFromToken(accessToken));
+        User user = userCache.findUserByUsername(jwtCore.getUsernameFromToken(accessToken));
         tokenService.revokeToken(jwtCore.getJti(accessToken));
         userService.updateUserStatus(user.getId(), "offline");
         return ResponseEntity.ok("Вы успешно вышли из системы. Токены деактивированы.");

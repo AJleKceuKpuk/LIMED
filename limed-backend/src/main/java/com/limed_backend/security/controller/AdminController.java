@@ -26,10 +26,10 @@ public class AdminController {
     private final UserRepository userRepository;
     private final UserMapper userMapper;
     private final AdminService adminService;
-    private final UserService userService;
     private final ChatsService chatsService;
     private final MessagesService messagesService;
     private final BlockingService blockingService;
+    private final UserCacheService userCache;
 
     @GetMapping("/get-allusers")
     public List<UserResponse> getAllUsers() {
@@ -41,7 +41,7 @@ public class AdminController {
 
     @GetMapping("/get-user/{id}")
     public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        User user = userService.findUserById(id);
+        User user = userCache.findUserById(id);
         UserResponse userResponse = userMapper.toUserResponse(user);
         return ResponseEntity.ok(userResponse);
     }

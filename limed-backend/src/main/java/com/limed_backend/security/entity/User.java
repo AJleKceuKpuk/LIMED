@@ -56,22 +56,22 @@ public class User implements Serializable {
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Blocking> blockings = new ArrayList<>();
 
-    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Contacts> contactsSender = new ArrayList<>();
 
-    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Contacts> contactsReceiver = new ArrayList<>();
 
     // Связь с чатами через сущность ChatUser
-    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<ChatUser> chatUsers = new ArrayList<>();
 
     // Сообщения, отправленные пользователем
-    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "sender", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     private List<Messages> sentMessages = new ArrayList<>();
 
     // Сообщения, просмотренные пользователем
-    @ManyToMany(mappedBy = "viewedBy")
+    @ManyToMany(mappedBy = "viewedBy" , fetch = FetchType.LAZY)
     private List<Messages> viewedMessages = new ArrayList<>();
 
     @Override

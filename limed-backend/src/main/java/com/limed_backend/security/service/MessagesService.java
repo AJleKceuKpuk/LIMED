@@ -32,6 +32,7 @@ public class MessagesService {
     private final ChatsService chatsService;
     private final MessageRepository messageRepository;
     private final ChatsRepository chatsRepository;
+    private final UserCacheService userCache;
 
 
     //получаем сообщение по ID
@@ -42,7 +43,7 @@ public class MessagesService {
 
     //получить все сообщения с чата
     public Page<MessageResponse> findMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
-        User user = userService.findUserByUsername(authentication.getName());
+        User user = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsService.findChatById(chatId);
         boolean isMember = chat.getChatUsers()
                 .stream()
@@ -73,7 +74,7 @@ public class MessagesService {
 
     //получить все сообщения пользователя
     public Page<MessageResponse> findMessagesFromUser(Authentication authentication, Long userId, int size, int page){
-        User admin = userService.findUserByUsername(authentication.getName());
+        User admin = userCache.findUserByUsername(authentication.getName());
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
         if (!userService.isAdmin(admin)) {
             throw new ResourceNotFoundException("Доступно только администраторам!");
@@ -85,7 +86,7 @@ public class MessagesService {
 
     //Создаем сообщение
     public MessageResponse createMessage(Authentication authentication, MessageRequest request){
-        User sender = userService.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserByUsername(authentication.getName());
         Chats chat;
         if (request.getChatId() != null){
             chat = chatsService.findChatById(request.getChatId());
@@ -141,7 +142,7 @@ public class MessagesService {
 
     //изменение сообщения
     public MessageResponse editMessage(Authentication authentication, MessageRequest request){
-        User sender = userService.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserByUsername(authentication.getName());
         Messages message = findMessageById(request.getId());
         if (!sender.equals(message.getSender())){
             throw new RuntimeException("Только владелец может изменить сообщение");
@@ -155,7 +156,7 @@ public class MessagesService {
 
     //удаление сообщения
     public String deleteMessage(Authentication authentication, MessageRequest request){
-        User sender = userService.findUserByUsername(authentication.getName());
+        User sender = userCache.findUserByUsername(authentication.getName());
         Messages message = findMessageById(request.getId());
         if (!sender.equals(message.getSender())){
             throw new RuntimeException("Только владелец может удалить сообщение!");
@@ -167,7 +168,7 @@ public class MessagesService {
 
     //метод добавляет имя текущего пользователя в список посмотревших сообщение
     public MessageResponse viewMessage(Authentication authentication, MessageRequest request){
-        User user = userService.findUserByUsername(authentication.getName());
+        User user = userCache.findUserByUsername(authentication.getName());
         Messages message = findMessageById(request.getId());
         boolean isSender = message.getSender().getId().equals(user.getId());
         if (isSender){

@@ -3,6 +3,7 @@ package com.limed_backend.security.config;
 import com.limed_backend.security.entity.Blocking;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.BlockingService;
+import com.limed_backend.security.service.UserCacheService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,13 +21,13 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 @Component
 public class BanCheckFilter extends OncePerRequestFilter {
 
-    private final UserService userService;
     private final BlockingService blockingService;
+    private final UserCacheService userCache;
 
 
-    public BanCheckFilter(UserService userService, BlockingService blockingService) {
-        this.userService = userService;
+    public BanCheckFilter(BlockingService blockingService, UserCacheService userCache) {
         this.blockingService = blockingService;
+        this.userCache = userCache;
     }
 
     @Override
@@ -39,7 +40,7 @@ public class BanCheckFilter extends OncePerRequestFilter {
                 filterChain.doFilter(request, response);
                 return;
             }
-            User user = userService.findUserByUsername(auth.getName());
+            User user = userCache.findUserByUsername(auth.getName());
             if (user != null) {
                 List<Blocking> activeBlocks = blockingService.findAllBlocksUser(user, "ban");
                 if (activeBlocks.stream().findAny().isPresent()) {

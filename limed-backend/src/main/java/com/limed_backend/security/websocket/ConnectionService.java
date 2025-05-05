@@ -5,6 +5,7 @@ import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.MessagesService;
+import com.limed_backend.security.service.UserCacheService;
 import com.limed_backend.security.service.UserService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -24,6 +25,7 @@ public class ConnectionService {
     private final SimpMessagingTemplate messagingTemplate;
     private final UserService userService;
     private final MessagesService messagesService;
+    private final UserCacheService userCache;
 
 
     //Добавляем дату последней активности, и имя пользователя в Map
@@ -45,7 +47,7 @@ public class ConnectionService {
 
         userLastActivity.forEach((userId, lastActivityMillis) -> { //проходим по всей Map и смотрим юзера на последнюю активность
             if (currentTime - lastActivityMillis > inactivityThreshold) {
-                User user = userService.findUserById(userId);
+                User user = userCache.findUserById(userId);
                 userService.updateUserStatus(userId, "away");
                 LocalDateTime recordedLastActivity = java.time.Instant
                         .ofEpochMilli(lastActivityMillis)
@@ -67,7 +69,7 @@ public class ConnectionService {
             Long userId = chatUser.getUser().getId();
 
             if (userLastActivity.containsKey(userId)) {
-                User user = userService.findUserById(userId);
+                User user = userCache.findUserById(userId);
                 Long unreadCount = messagesService.countUnreadMessages(user);
                 messagingTemplate.convertAndSend("/ws/unread/" + userId, unreadCount);
 

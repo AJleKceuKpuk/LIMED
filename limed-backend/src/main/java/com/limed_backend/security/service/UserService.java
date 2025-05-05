@@ -2,22 +2,19 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Requests.*;
 import com.limed_backend.security.dto.Responses.TokenResponse;
+import com.limed_backend.security.dto.Responses.User.UserProfileResponse;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.EmailAlreadyExistsException;
 import com.limed_backend.security.exception.InvalidOldPasswordException;
-import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.exception.UsernameAlreadyExistsException;
 import com.limed_backend.security.repository.UserRepository;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Hibernate;
-import org.springframework.cache.annotation.Cacheable;
+import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -32,23 +29,17 @@ public class UserService {
     private final TokenService tokenService;
     private final RoleService roleService;
     private final PasswordEncoder passwordEncoder;
-    private final CacheManager cacheManager;
+    private final UserCacheService userCache;
 
-
-    // Поиск пользователя имени
-    @Cacheable(value = "userCache", key = "#username")
-    public User findUserByUsername(String username) {
-        return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
-    }
-
-    // Поиск пользователя по Id
-    @Cacheable(value = "userCache", key = "#id")
-    public User findUserById(Long id){
-        User user = userRepository.findById(id).
-                orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
-        //Hibernate.initialize(user.getBlockings());
-        return user;
+    //получение профиля пользователя
+    public UserProfileResponse getProfile(Authentication authentication) {
+        User user = userCache.findUserByUsername(authentication.getName());
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getDateRegistration()
+        );
     }
 
     // Проверка доступности имени
@@ -96,23 +87,23 @@ public class UserService {
 
     // обновление статуса пользователя в БД
     public void updateUserStatus(Long userId, String newStatus) {
-        User user = findUserById(userId);
+        User user = userCache.findUserById(userId);
         if (newStatus.equals(user.getStatus())) {
             return;
         }
         user.setStatus(newStatus);
         userRepository.save(user);
-        deleteUserCache(user);
-        addUserCache(user);
+        userCache.deleteUserCache(user);
+        userCache.addUserCache(user);
     }
 
     //обновление последней активности в БД
     public void updateLastActivity(Long userId, LocalDateTime activityTime) {
-        User user = findUserById(userId);
+        User user = userCache.findUserById(userId);
         user.setLastActivity(activityTime);
         userRepository.save(user);
-        deleteUserCache(user);
-        addUserCache(user);
+        userCache.deleteUserCache(user);
+        userCache.addUserCache(user);
     }
 
     // Изменение имени пользователя
@@ -120,32 +111,36 @@ public class UserService {
                                         String currentUsername,
                                         UpdateUsernameRequest userRequest,
                                         HttpServletResponse response) {
-        User user = findUserByUsername(currentUsername);
+        User user = userCache.findUserByUsername(currentUsername);
         validateUsernameAvailability(userRequest.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
+        userCache.deleteUserCache(user);
 
-        deleteUserCache(user);
+        userRepository.updateUsername(user.getId(), userRequest.getNewUsername());
         user.setUsername(userRequest.getNewUsername());
 
-        userRepository.save(user);
-        addUserCache(user);
+        userCache.addUserCache(user);
+
         return tokenService.generateAndSetTokens(request, user, response);
     }
 
+
     //Изменение Email пользователя
     public String updateEmail(String currentUsername, UpdateEmailRequest request) {
-        User user = findUserByUsername(currentUsername);
+        User user = userCache.findUserByUsername(currentUsername);
         validateEmailAvailability(request.getNewEmail());
         user.setEmail(request.getNewEmail());
+        System.out.println("-----");
         userRepository.save(user);
-        deleteUserCache(user);
-        addUserCache(user);
+        System.out.println("-----");
+        userCache.deleteUserCache(user);
+        userCache.addUserCache(user);
         return "Email успешно обновлён";
     }
 
     // Изменение пароля
     public String updatePassword(String currentUsername, UpdatePasswordRequest request) {
-        User user = findUserByUsername(currentUsername);
+        User user = userCache.findUserByUsername(currentUsername);
 
         validateOldPassword(user, request.getOldPassword());
 
@@ -154,23 +149,7 @@ public class UserService {
         return "Пароль успешно обновлён";
     }
 
-    // добавляем в кэш пользователя
-    public void addUserCache(User user) {
-        Cache userCache = cacheManager.getCache("userCache");
-        if (userCache != null) {
-            userCache.put(user.getId(), user);
-            userCache.put(user.getUsername(), user);
-        }
-    }
 
-    //удаляем пользователя из кэша
-    public void deleteUserCache(User user){
-        Cache userCache = cacheManager.getCache("userCache");
-        if (userCache != null) {
-            userCache.evict(user.getId());
-            userCache.evict(user.getUsername());
-        }
-    }
 
 }
 

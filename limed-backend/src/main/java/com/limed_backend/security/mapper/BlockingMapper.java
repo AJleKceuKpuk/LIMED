@@ -10,7 +10,6 @@ import org.mapstruct.Named;
 
 @Mapper(componentModel = "spring")
 public interface BlockingMapper {
-    //BlockingResponse toBlockingResponse(Blocking blocking);
 
     @Mapping(target = "revokedBy", source = "revokedBy", qualifiedByName = "userToString")
     BlockingResponse toBlockingResponse(Blocking blocking);

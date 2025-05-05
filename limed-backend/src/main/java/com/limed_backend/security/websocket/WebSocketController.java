@@ -7,10 +7,7 @@ import com.limed_backend.security.dto.Responses.ContactsResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.service.ChatsService;
-import com.limed_backend.security.service.ContactsService;
-import com.limed_backend.security.service.MessagesService;
-import com.limed_backend.security.service.UserService;
+import com.limed_backend.security.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
@@ -29,12 +26,13 @@ public class WebSocketController {
     private final ContactsService contactsService;
     private final MessagesService messagesService;
     private final ChatsService chatsService;
+    private final UserCacheService userCache;
 
 
     // Клиент отправляет обновление статуса на адрес /ws/online/update
     @MessageMapping("/online/update")
     public void updateUserStatus(UserStatusRequest message) {
-        User user = userService.findUserById(message.getUserId());
+        User user = userCache.findUserById(message.getUserId());
         connectionService.updateLastUserActivity(message.getUserId());
         userService.updateUserStatus(message.getUserId(), message.getStatus());
 

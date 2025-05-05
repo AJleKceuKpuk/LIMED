@@ -24,6 +24,7 @@ public class BlockingService {
     private final BlockingRepository blockingRepository;
     private final UserService userService;
     private final CacheManager cacheManager;
+    private final UserCacheService userCache;
 
     //поиск всех блокировок пользователя
     @Cacheable(value = "blockingCache", key = "#user.id")
@@ -33,8 +34,8 @@ public class BlockingService {
 
     // выдать блокировку пользователя
     public String giveBlock(GiveBlockRequest request, Authentication authentication) {
-        User admin = userService.findUserByUsername(authentication.getName());
-        User user = userService.findUserByUsername(request.getUsername());
+        User admin = userCache.findUserByUsername(authentication.getName());
+        User user = userCache.findUserByUsername(request.getUsername());
 
         LocalDateTime startTime = LocalDateTime.now();
         Duration duration = DurationParser.parseDuration(request.getDuration());
@@ -55,9 +56,10 @@ public class BlockingService {
     // снять блокировку пользователя
     @Transactional
     public String unblock(UnblockRequest request, Authentication authentication) {
-        User user = userService.findUserByUsername(request.getUsername());
-        User admin = userService.findUserByUsername(authentication.getName());
+        User user = userCache.findUserByUsername(request.getUsername());
+        User admin = userCache.findUserByUsername(authentication.getName());
         List<Blocking> activeBlocks = blockingRepository.findActiveBlockings(user, request.getBlockingType());
+
         Cache cache = cacheManager.getCache("blockingCache");
 
         if (activeBlocks.isEmpty()) {

@@ -4,9 +4,11 @@ import com.limed_backend.security.dto.Responses.*;
 import com.limed_backend.security.dto.Requests.UpdateEmailRequest;
 import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
 import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
+import com.limed_backend.security.dto.Responses.User.UserProfileResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ContactsService;
 import com.limed_backend.security.service.MessagesService;
+import com.limed_backend.security.service.UserCacheService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -24,13 +26,13 @@ public class UserController {
 
     private final ContactsService contactsService;
     private final UserService userService;
-    private final MessagesService messagesService;
+    private final UserCacheService userCache;
 
 
     @GetMapping("/profile")
-    public ResponseEntity<?> getProfile(Authentication authentication) {
-        User user = userService.findUserByUsername(authentication.getName());
-        return ResponseEntity.ok(new UserProfileResponse(user.getId(),user.getUsername(), user.getEmail(), user.getDateRegistration()));
+    public ResponseEntity<UserProfileResponse> getProfile(Authentication authentication) {
+        UserProfileResponse user = userService.getProfile(authentication);
+        return ResponseEntity.ok(user);
     }
 
     @PutMapping("/update-username")
@@ -57,7 +59,7 @@ public class UserController {
 
     @GetMapping("/contacts")
     public ResponseEntity<List<ContactsResponse>> getContacts(Authentication authentication) {
-        User user = userService.findUserByUsername(authentication.getName());
+        User user = userCache.findUserByUsername(authentication.getName());
         List<ContactsResponse> friends = contactsService.findAllContacts(user);
         return ResponseEntity.ok(friends);
     }

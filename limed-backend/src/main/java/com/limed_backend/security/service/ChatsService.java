@@ -34,6 +34,7 @@ public class ChatsService {
     private final ChatUserRepository chatUserRepository;
     private final CacheManager cacheManager;
     private final EntityManager entityManager;
+    private final UserCacheService userCache;
 
     //=====================================================//
     // поиск чата по Id
@@ -62,7 +63,7 @@ public class ChatsService {
 
     //Выдать все чаты текущего пользователя
     public List<ChatResponse> findUserChats(Authentication authentication) {
-        User currentUser = userService.findUserByUsername(authentication.getName());
+        User currentUser = userCache.findUserByUsername(authentication.getName());
         List<Chats> activeChats = chatRepository.findChatsByUserAndStatus(currentUser.getId(), "Active");
 
         return activeChats.stream()
@@ -72,7 +73,7 @@ public class ChatsService {
 
     // Показать список чатов для Администратора!
     public List<ChatResponse> findAllChats(Authentication authentication) {
-        User admin = userService.findUserByUsername(authentication.getName());
+        User admin = userCache.findUserByUsername(authentication.getName());
         if (userService.isAdmin(admin)) {
             List<Chats> allChats = chatRepository.findAll();
             return allChats.stream()
@@ -84,8 +85,8 @@ public class ChatsService {
 
     //показать список чатов конкретного пользователя
     public List<ChatResponse> findAllChatsByUser(Authentication authentication, Long id) {
-        User admin = userService.findUserByUsername(authentication.getName());
-        User user = userService.findUserById(id);
+        User admin = userCache.findUserByUsername(authentication.getName());
+        User user = userCache.findUserById(id);
 
         if (userService.isAdmin(admin)) {
             List<Chats> userChats = chatRepository.findChatsByUser(user.getId());
@@ -100,7 +101,7 @@ public class ChatsService {
     //создание чата
     @Transactional
     public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
-        User creator = userService.findUserByUsername(authentication.getName());
+        User creator = userCache.findUserByUsername(authentication.getName());
         String type = request.getType();
         Set<Long> usersId = new HashSet<>();
         if (request.getUsersId() != null) {
@@ -110,7 +111,7 @@ public class ChatsService {
 
         List<User> users = new ArrayList<>();
         for (Long userId : usersId) {
-            User user = userService.findUserById(userId);
+            User user = userCache.findUserById(userId);
             if (type.equals("PRIVATE")) {
                 if (!userId.equals(creator.getId()) &&
                         contactsService.findDirectStatus(userId, creator.getId(), "Ignore").isEmpty()) {
@@ -152,7 +153,7 @@ public class ChatsService {
 
     //изменение названия чата
     public ChatResponse renameChat(Authentication authentication, RenameChatRequest request) {
-        User currentUser = userService.findUserByUsername(authentication.getName());
+        User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = findChatById(request.getId());
         checkCreator(currentUser, chat);
         if ("PRIVATE".equals(chat.getType())){
@@ -167,7 +168,7 @@ public class ChatsService {
 
     //Деактивировать чат (может только создатель чата)
     public ChatResponse deactivateChat(Authentication authentication, Long id){
-        User currentUser = userService.findUserByUsername(authentication.getName());
+        User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = findChatById(id);
         checkCreator(currentUser, chat);
         chat.setStatus("Deleted");
@@ -178,7 +179,7 @@ public class ChatsService {
 
     //Активировать чат (может только Администратор)
     public ChatResponse activatedChat(Authentication authentication, Long id){
-        User currentUser = userService.findUserByUsername(authentication.getName());
+        User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = findChatById(id);
         deleteChatByIdCache(chat);
         checkCreator(currentUser, chat);
@@ -191,7 +192,7 @@ public class ChatsService {
     //=====================================================//
     // добавление пользователей в чат
     public ChatResponse addUsersToChat(Authentication authentication, UsersChatRequest request) {
-        User currentUser = userService.findUserByUsername(authentication.getName());
+        User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = findChatById(request.getId());
 
         if ("PRIVATE".equals(chat.getType())) {
@@ -224,7 +225,7 @@ public class ChatsService {
                 boolean exists = chatUsers.stream()
                         .anyMatch(cu -> cu.getUser().getId().equals(userId));
                 if (!exists && contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
-                    User user = userService.findUserById(userId);
+                    User user = userCache.findUserById(userId);
                     ChatUser newChatUser = new ChatUser();
 
                     newChatUser.setChat(chat);
@@ -245,7 +246,7 @@ public class ChatsService {
 
     // удаление пользователей в чат
     public ChatResponse removeUserFromChat(Authentication authentication, UsersChatRequest request) {
-        User currentUser = userService.findUserByUsername(authentication.getName());
+        User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = findChatById(request.getId());
 
         checkCreator(currentUser, chat);
@@ -274,7 +275,7 @@ public class ChatsService {
 
     //метод выхода из чата
     public ChatResponse leaveChat(Authentication authentication, Long chatId) {
-        User currentUser = userService.findUserByUsername(authentication.getName());
+        User currentUser = userCache.findUserByUsername(authentication.getName());
 
         Chats chat = findChatById(chatId);
 
