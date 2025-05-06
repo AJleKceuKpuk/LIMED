@@ -60,10 +60,10 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    @PutMapping("/edit-role/{id}")
-    public ResponseEntity<String> editRole(@RequestBody UpdateRoleRequest request,
-                                           @PathVariable Long id) {
-        String result = adminService.editRole(request, id);
+    @PutMapping("/edit-role")
+    public ResponseEntity<String> editRole(@RequestBody UpdateRoleRequest request) {
+        String result = adminService.editRole(request);
+
         return ResponseEntity.ok(result);
     }
 

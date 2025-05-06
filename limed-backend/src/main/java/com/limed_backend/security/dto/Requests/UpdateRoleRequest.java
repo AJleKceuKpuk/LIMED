@@ -6,6 +6,7 @@ import java.util.Set;
 
 @Data
 public class UpdateRoleRequest {
+    private Long id;
     private Set<String> roles;   // Имена ролей, например, "ROLE_USER", "ROLE_ADMIN"
 
 }

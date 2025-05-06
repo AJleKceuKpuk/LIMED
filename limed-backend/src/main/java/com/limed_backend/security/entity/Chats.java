@@ -21,8 +21,10 @@ public class Chats implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
+    @Column(name = "name")
     private String name;
 
     @Column(name = "creator_id", nullable = false)
@@ -31,16 +33,22 @@ public class Chats implements Serializable {
     @Column(name = "type")
     private String type;  // Примеры: "ALL", "GROUP", "PRIVATE", "SUPPORT"
 
-    @Column(nullable = false)
+    @Column(name = "status", nullable = false)
     private String status;
 
-    // Участники чата через сущность ChatUser
-    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
+    //нужно обдумать!
+    @OneToMany(mappedBy = "chat",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true,
+            fetch = FetchType.EAGER)
+    @Builder.Default
     private List<ChatUser> chatUsers = new ArrayList<>();
 
+    //нужно обдумать!
     // Сообщения в чате
     @Builder.Default
-    @OneToMany(mappedBy = "chat", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "chat",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true)
     private List<Messages> messages = new ArrayList<>();
-
 }

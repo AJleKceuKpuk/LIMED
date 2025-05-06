@@ -17,36 +17,46 @@ public class Token implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
+
+    //поля
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     // Уникальный идентификатор токена (jti)
-    @Column(nullable = false, unique = true)
+    @Column(name = "jti", nullable = false, unique = true)
     private String jti;
 
+    @Column(name = "username")
     private String username;
 
     @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "issued_at")
     private Date issuedAt;
 
     @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "expiration")
     private Date expiration;
 
-    @Column(nullable = false)
+    @Column(name = "revoked", nullable = false)
     private Boolean revoked;
 
     // Время, когда токен был отозван
     @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "revoked_at")
     private Date revokedAt;
 
     // Тип токена: "access" или "refresh"
-    @Column(nullable = false)
+    @Column(name = "tokenType", nullable = false)
     private String tokenType;
 
     // Поле для хранения IP-адреса, с которого был выдан токен.
-    @Column(length = 45)
+    @Column(name = "ip", length = 45)
     private String ipAddress;
+
+    //методы
 
     public Token(String jti, String username, Date issuedAt, Date expiration, String tokenType, String ipAddress) {
         this.jti = jti;

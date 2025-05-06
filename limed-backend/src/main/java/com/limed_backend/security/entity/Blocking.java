@@ -23,6 +23,7 @@ public class Blocking implements Serializable {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id")
     private Long id;
 
     @Column(name = "blocking_type", nullable = false)
@@ -37,18 +38,18 @@ public class Blocking implements Serializable {
     @Column(name = "reason")
     private String reason;
 
-    @Column(name = "revoked_block")
-    private boolean revokedBlock;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "revoked_by_id")
-    private User revokedBy;
-
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne
     @JoinColumn(name = "blocked_by_id", nullable = false)
     private User blockedBy;
+
+    @Column(name = "revoked_block")
+    private boolean revokedBlock;
+
+    @ManyToOne
+    @JoinColumn(name = "revoked_by_id")
+    private User revokedBy;
 }

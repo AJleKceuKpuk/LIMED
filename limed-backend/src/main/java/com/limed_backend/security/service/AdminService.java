@@ -53,19 +53,31 @@ public class AdminService {
 
     // редактировать Роли пользователя
     @Transactional
-    public String editRole(UpdateRoleRequest request, Long id) {
-        User user = userCache.findUserById(id);
-        Set<Role> newRoles = new HashSet<>();                                   //создаем пустой список ролей
+    public String editRole(UpdateRoleRequest request) {
+        User user = userCache.findUserById(request.getId());
+        System.out.println("findUserById(request.getId())");
+        System.out.println(user.toString());
+        System.out.println("toString");
+        Set<Role> newRoles = new HashSet<>();
+        System.out.println("HashSet<>()");
+        //создаем пустой список ролей
         for (String roleName : request.getRoles()) {                            //проходимся по ролям из запроса
+            System.out.println("String roleName : request.getRoles()");
             Role role = roleRepository.findByName(roleName)                     //если роль существует в бд - добавляем
                     .orElseThrow(() -> new ResourceNotFoundException("Роль '" + roleName + "' не найдена"));
+            System.out.println("findByName(roleName)");
             newRoles.add(role);
+            System.out.println("add(role)");
         }
-        userCache.deleteUserCache(user);                                      //удаляем старого юзера из кэша
-        user.setRoles(newRoles);                                                //изменяем роли
+        System.out.println("[*] okay");
+        userCache.deleteUserCache(user);
+        System.out.println("Delete cache");//удаляем старого юзера из кэша
+        user.setRoles(newRoles);
+        System.out.println("setRoles(newRoles)");//изменяем роли
         userCache.addUserCache(user);                                         //добавляем обновленного юзера в кэш
-
+        System.out.println("userCache.addUserCache(user);");
         userRepository.save(user);
+        System.out.println("save");
         return "Роли пользователя успешно обновлены!";
     }
 

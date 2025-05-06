@@ -41,7 +41,6 @@ public class ConnectionService {
     //Запускается раз в 30 секунд
     @Scheduled(fixedDelay = 30000)
     public void activityCheck() {
-        System.out.println("check");
         long currentTime = System.currentTimeMillis();
         long inactivityThreshold = 60000;
 
