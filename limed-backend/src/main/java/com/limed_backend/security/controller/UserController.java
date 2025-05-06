@@ -7,7 +7,6 @@ import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
 import com.limed_backend.security.dto.Responses.User.UserProfileResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ContactsService;
-import com.limed_backend.security.service.MessagesService;
 import com.limed_backend.security.service.UserCacheService;
 import com.limed_backend.security.service.UserService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -39,6 +38,7 @@ public class UserController {
     public ResponseEntity<TokenResponse> updateUsername(HttpServletRequest request, @RequestBody UpdateUsernameRequest userRequest,
                                                         Authentication authentication,
                                                         HttpServletResponse response) {
+        System.out.println("/update-username");
         TokenResponse tokenResponse = userService.updateUsername(request, authentication.getName(), userRequest, response);
         return ResponseEntity.ok(tokenResponse);
     }

@@ -52,7 +52,7 @@ public class UserService {
 
     // Проверка доступности Email
     public void validateEmailAvailability(String newEmail) {
-        Optional<User> emailExists = userRepository.findByEmail(newEmail);
+        Optional<User> emailExists = userRepository.findByEmailIgnoreCase(newEmail);
         if (emailExists.isPresent()) {
             throw new EmailAlreadyExistsException();
         }
@@ -114,11 +114,12 @@ public class UserService {
         User user = userCache.findUserByUsername(currentUsername);
         validateUsernameAvailability(userRequest.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
-        userCache.deleteUserCache(user);
 
-        userRepository.updateUsername(user.getId(), userRequest.getNewUsername());
+
         user.setUsername(userRequest.getNewUsername());
+        userRepository.save(user);
 
+        userCache.deleteUserCache(user);
         userCache.addUserCache(user);
 
         return tokenService.generateAndSetTokens(request, user, response);

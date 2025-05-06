@@ -23,7 +23,7 @@ public class User implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-    //TODO ПОЛЯ
+    //ПОЛЯ
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id")
@@ -47,9 +47,8 @@ public class User implements Serializable {
     @Column(name = "registration")
     private LocalDate dateRegistration;
 
-    //связи
+    //СВЯЗИ
 
-    // Связь с сущностью Role
     @ManyToMany(fetch = FetchType.EAGER)
     @JoinTable(
             name = "user_roles",
@@ -104,7 +103,7 @@ public class User implements Serializable {
 
 
 
-    //методы
+    //TODO МЕТОДЫ
 
     @Override
     public boolean equals(Object o) {

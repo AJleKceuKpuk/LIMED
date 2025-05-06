@@ -7,17 +7,21 @@ import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 @Entity
 @Table(name = "chats")
-@Data
-@Builder
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
+@Builder
 public class Chats implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
+
+    //ПОЛЯ
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -36,19 +40,49 @@ public class Chats implements Serializable {
     @Column(name = "status", nullable = false)
     private String status;
 
-    //нужно обдумать!
+    //ОТНОШЕНИЯ
+
     @OneToMany(mappedBy = "chat",
-            cascade = CascadeType.ALL,
+            cascade = {CascadeType.DETACH, CascadeType.REFRESH, CascadeType.REMOVE},
             orphanRemoval = true,
-            fetch = FetchType.EAGER)
+            fetch = FetchType.LAZY)
     @Builder.Default
     private List<ChatUser> chatUsers = new ArrayList<>();
 
-    //нужно обдумать!
-    // Сообщения в чате
-    @Builder.Default
+
     @OneToMany(mappedBy = "chat",
-            cascade = CascadeType.ALL,
-            orphanRemoval = true)
+            cascade = {CascadeType.DETACH, CascadeType.REFRESH, CascadeType.REMOVE},
+            orphanRemoval = true,
+            fetch = FetchType.LAZY)
+    @Builder.Default
     private List<Messages> messages = new ArrayList<>();
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Chats chats = (Chats) o;
+        return Objects.equals(id, chats.id)
+                && Objects.equals(name, chats.name)
+                && Objects.equals(creatorId, chats.creatorId)
+                && Objects.equals(type, chats.type)
+                && Objects.equals(status, chats.status);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, creatorId, type, status);
+    }
+
+    @Override
+    public String toString() {
+        return "Chats{" +
+                "id=" + id +
+                ", name='" + name + '\'' +
+                ", creatorId=" + creatorId +
+                ", type='" + type + '\'' +
+                ", status='" + status + '\'' +
+                ", chatUsers=" + chatUsers.toString() +
+                ", messages=" + messages.toString() +
+                '}';
+    }
 }

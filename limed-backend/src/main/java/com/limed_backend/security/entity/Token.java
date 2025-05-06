@@ -18,7 +18,7 @@ public class Token implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
-    //поля
+    //ПОЛЯ
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,7 +56,7 @@ public class Token implements Serializable {
     @Column(name = "ip", length = 45)
     private String ipAddress;
 
-    //методы
+    //МЕТОДЫ
 
     public Token(String jti, String username, Date issuedAt, Date expiration, String tokenType, String ipAddress) {
         this.jti = jti;

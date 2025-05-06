@@ -1,25 +1,33 @@
 package com.limed_backend.security.entity;
 
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serial;
 import java.io.Serializable;
+import java.util.Objects;
 
 @Entity
 @Table(name = "chat_users")
-@Data
 @NoArgsConstructor
 @AllArgsConstructor
+@Getter
+@Setter
 public class ChatUser implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
 
+    //ПОЛЯ
+
     @EmbeddedId
+    @Column(name = "id")
     private ChatUserId id = new ChatUserId();
+
+    @Column(name = "status")
+    private String status;
+
+    //ОТНОШЕНИЯ
 
     @ManyToOne
     @MapsId("chatId")
@@ -31,6 +39,28 @@ public class ChatUser implements Serializable {
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
-    @Column(name = "status")
-    private String status;
+    //МЕТОДЫ
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        ChatUser chatUser = (ChatUser) o;
+        return Objects.equals(id, chatUser.id)
+                && Objects.equals(status, chatUser.status);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, status);
+    }
+
+    @Override
+    public String toString() {
+        return "ChatUser{" +
+                "id=" + id +
+                ", status='" + status + '\'' +
+                ", chat=" + chat.getId() +
+                ", user=" + user.getId() +
+                '}';
+    }
 }

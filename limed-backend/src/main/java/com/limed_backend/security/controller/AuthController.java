@@ -19,16 +19,19 @@ public class AuthController {
 
     @PostMapping("/registration")
     public String registration(@RequestBody RegistrationRequest request) {
+        System.out.println("/registration");
         return authService.registration(request);
     }
 
     @PostMapping("/login")
     public TokenResponse login(HttpServletRequest request, @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
+        System.out.println("/login");
         return authService.login(request, loginRequest, response);
     }
 
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
+        System.out.println("/logout");
         return authService.logout(request, response);
     }
 }
