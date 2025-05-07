@@ -29,7 +29,9 @@ public class ContactsService {
 
     // Список всех друзей пользователя
     public List<FriendResponse> findAcceptContacts(User user) {
+        System.out.println("find?");
         List<Contacts> contacts = contactsCache.findAllAccept(user.getId());
+        System.out.println(contacts.toString());
         return contacts.stream()
                 .map(contact -> contactsMapper.toFriendResponse(contact, user.getId()))
                 .collect(Collectors.toList());
@@ -205,13 +207,19 @@ public class ContactsService {
         User receiver = userCache.findUserByUsername(authentication.getName());
         User sender = userCache.findUserById(senderId);
 
-        Contacts contactsInvite = findDirectStatus(senderId, receiver.getId(), "Pending")
-                .orElseThrow(() -> new ResourceNotFoundException("У вас нет предложений для дружбы от пользователя с id " + senderId));
+        Contacts contactsInvite = findDirectStatus(senderId, receiver.getId(), "Pending").orElse(null);
+        Contacts contactsPending = findDirectStatus(receiver.getId(), senderId, "Pending").orElse(null);
 
-        contactsRepository.delete(contactsInvite);
-
-        contactsCache.removeContactsFromCache(sender, contactsInvite, "contacts-pending");
-        contactsCache.removeContactsFromCache(receiver, contactsInvite, "contacts-invite");
+        if (contactsInvite != null){
+            contactsRepository.delete(contactsInvite);
+            contactsCache.removeContactsFromCache(sender, contactsInvite, "contacts-pending");
+            contactsCache.removeContactsFromCache(receiver, contactsInvite, "contacts-invite");
+        }
+        else if (contactsPending != null){
+            contactsRepository.delete(contactsPending);
+            contactsCache.removeContactsFromCache(receiver, contactsPending, "contacts-pending");
+            contactsCache.removeContactsFromCache(sender, contactsPending, "contacts-invite");
+        }
 
         return "Предложение отклонено";
     }
@@ -246,7 +254,6 @@ public class ContactsService {
         contactsRepository.delete(ignoreUser);
 
         contactsCache.removeContactsFromCache(sender, ignoreUser, "contacts-ignore");
-        contactsCache.removeContactsFromCache(receiver, ignoreUser, "contacts-ignore");
 
         return "Пользователь " + receiver.getUsername() + " разблокирован";
     }

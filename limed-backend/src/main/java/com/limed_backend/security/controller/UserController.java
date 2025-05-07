@@ -91,6 +91,7 @@ public class UserController {
     @PostMapping("/add-contacts/{id}")
     public ResponseEntity<String> addContacts(Authentication authentication,
                                             @PathVariable Long id){
+        System.out.println("/add contacts /id");
         String resultMessage = contactsService.addContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
@@ -98,6 +99,7 @@ public class UserController {
     @PostMapping("/accept-contacts/{id}")
     public ResponseEntity<String> acceptContacts(Authentication authentication,
                                                @PathVariable Long id){
+        System.out.println("/accept contacts /id");
         String resultMessage = contactsService.acceptContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
@@ -105,6 +107,7 @@ public class UserController {
     @DeleteMapping("/cansel-contacts/{id}")
     public ResponseEntity<String> canselContacts(Authentication authentication,
                                                @PathVariable Long id){
+        System.out.println("/cansel contacts /id");
         String resultMessage = contactsService.cancelContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
@@ -112,6 +115,7 @@ public class UserController {
     @DeleteMapping("/delete-contacts/{id}")
     public ResponseEntity<String> deleteContacts(Authentication authentication,
                                                 @PathVariable Long id){
+        System.out.println("/delete contacts /id");
         String resultMessage = contactsService.deleteContacts(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
@@ -119,6 +123,7 @@ public class UserController {
     @PostMapping("/ignore/{id}")
     public ResponseEntity<String> addContactsIgnore(Authentication authentication,
                                                     @PathVariable Long id){
+        System.out.println("/ignore /id");
         String resultMessage = contactsService.addIgnore(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }
@@ -126,6 +131,7 @@ public class UserController {
     @DeleteMapping("/delete-ignore/{id}")
     public ResponseEntity<String> deleteIgnore(Authentication authentication,
                                                @PathVariable Long id){
+        System.out.println("/delete ignore /id");
         String resultMessage = contactsService.deleteIgnore(authentication, id);
         return ResponseEntity.ok(resultMessage);
     }

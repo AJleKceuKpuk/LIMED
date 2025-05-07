@@ -2,6 +2,7 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.entity.Contacts;
 import com.limed_backend.security.entity.User;
+import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.repository.ContactsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -20,28 +21,29 @@ public class ContactsCacheService {
     private final ContactsRepository contactsRepository;
 
     //All accept contacts
-    @Cacheable(cacheManager = "contacts", key = "user.id")
+    @Cacheable(value = "contacts", key = "#id")
     public List<Contacts> findAllAccept(Long id){
+        System.out.println("find test");
         return contactsRepository.findAcceptedByUser(id)
                 .orElseGet(ArrayList::new);
     }
 
     //All ignore list
-    @Cacheable(cacheManager = "contacts-ignore", key = "user.id")
+    @Cacheable(value = "contacts-ignore", key = "#id")
     public List<Contacts> findAllIgnore(Long id){
         return contactsRepository.findIgnoreByUser(id)
                 .orElseGet(ArrayList::new);
     }
 
     //All pending contacts
-    @Cacheable(cacheManager = "contacts-pending", key = "user.id")
+    @Cacheable(value = "contacts-pending", key = "#id")
     public List<Contacts> findAllPending(Long id){
         return contactsRepository.findPendingByUser(id)
                 .orElseGet(ArrayList::new);
     }
 
     //All Invite
-    @Cacheable(cacheManager = "contacts-invite", key = "user.id")
+    @Cacheable(value = "contacts-invite", key = "#id")
     public List<Contacts> findAllInvite(Long id){
         return contactsRepository.findInviteByUser(id)
                 .orElseGet(ArrayList::new);
@@ -75,6 +77,7 @@ public class ContactsCacheService {
         Cache cache = cacheManager.getCache(typeCache);
         List<Contacts> contacts = getListContactsFromCache(cache, user);
         if (contacts.isEmpty()) {
+            System.out.println("Contacts empty -> find all " + typeCache);
             contacts = switch (typeCache) {
                 case "contacts" -> findAllAccept(user.getId());
                 case "contacts-ignore" -> findAllIgnore(user.getId());
@@ -85,6 +88,7 @@ public class ContactsCacheService {
         }
         if (contacts.stream().noneMatch(c -> c.getId().equals(contact.getId()))) {
             contacts.add(contact);
+            System.out.println(contact.getId());
         }
         cache.put(user.getId(), contacts);
     }
