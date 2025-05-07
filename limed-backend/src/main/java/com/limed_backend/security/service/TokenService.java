@@ -32,11 +32,12 @@ public class TokenService {
     private final JwtCore jwtCore;
     private final TokenRepository tokenRepository;
     private final CacheManager cacheManager;
+    private final TokenCacheService tokenCache;
 
     // Проверяет, что access токен существует в базе и не отозван
     private void validateAccessTokenRecord(Claims accessClaims) {
         String accessJti = accessClaims.getId();
-        Token accessTokenRecord = getTokenByJti(accessJti);
+        Token accessTokenRecord = tokenCache.getTokenByJti(accessJti);
         if (accessTokenRecord == null || accessTokenRecord.getRevoked()) {
             throw new JwtException("Access токен отозван или не найден");
         }
@@ -94,7 +95,7 @@ public class TokenService {
         validateAccessTokenRecord(accessClaims);
         validateTokenOwnership(refreshToken, accessClaims);
 
-        revokeToken(accessClaims.getId());
+        tokenCache.revokeToken(accessClaims.getId());
         return issueAccessToken(request, usernameFromAccess);
     }
 
@@ -110,16 +111,6 @@ public class TokenService {
         return null;
     }
 
-    //Отзыв токена (revoke из БД)
-    @CacheEvict(value = "tokenCache", key = "#jti")
-    public void revokeToken(String jti) {
-        Token token = getTokenByJti(jti);
-        if (token != null && !token.getRevoked()) {
-            token.setRevoked(true);
-            tokenRepository.save(token);
-        }
-    }
-
     //Отзыв всех токенов пользователя и БД
     @Transactional
     public void revokeAllTokens(String username) {
@@ -127,9 +118,7 @@ public class TokenService {
         Cache tokenCache = cacheManager.getCache("tokenCache");
         for (Token token : tokens) {
             token.setRevoked(true);
-            if (tokenCache != null) {
-                tokenCache.evict(token.getJti());
-            }
+            tokenCache.evict(token.getJti());
         }
         tokenRepository.saveAll(tokens);
     }
@@ -146,7 +135,7 @@ public class TokenService {
                 try {
                     String refreshToken = cookie.getValue();
                     String refreshJti = jwtCore.getJti(refreshToken);
-                    revokeToken(refreshJti);
+                    tokenCache.revokeToken(refreshJti);
                 } catch (Exception ex) {
                     logger.error("Ошибка при отзыве токена", ex);
                 }
@@ -178,16 +167,6 @@ public class TokenService {
         Date refreshExpiration = jwtCore.getExpirationFromToken(refreshToken);
         return (int) ((refreshExpiration.getTime() - System.currentTimeMillis()) / 1000);
     }
-
-
-    // При первом вызове, если записи с данным jti нет в кэше, она будет загружена из репозитория.
-    // Затем результат кэшируется в "tokenCache". Если tokenRepository вернёт null, кэширование не происходит.
-    @Cacheable(value = "tokenCache", key = "#jti", unless = "#result == null")
-    public Token getTokenByJti(String jti) {
-        return tokenRepository.findByJti(jti);
-    }
-
-
 
     //ежедневная проверка токенов для удаления старых, которые истекли (в 8:00)
     @Scheduled(cron = "0 0 8 * * ?")

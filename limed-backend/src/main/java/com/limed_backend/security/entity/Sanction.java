@@ -9,13 +9,13 @@ import java.time.LocalDateTime;
 import java.util.Objects;
 
 @Entity
-@Table(name = "blocking")
+@Table(name = "sanction")
 @NoArgsConstructor
 @AllArgsConstructor
 @Setter
 @Getter
 @Builder
-public class Blocking implements Serializable {
+public class Sanction implements Serializable {
 
     @Serial
     private static final long serialVersionUID = 1L;
@@ -27,20 +27,20 @@ public class Blocking implements Serializable {
     @Column(name = "id")
     private Long id;
 
-    @Column(name = "blocking_type", nullable = false)
-    private String blockingType;
+    @Column(name = "sanction_type", nullable = false)
+    private String sanctionType;
 
-    @Column(name = "start_time_block", nullable = false)
+    @Column(name = "start_time_sanction", nullable = false)
     private LocalDateTime startTime;
 
-    @Column(name = "end_time_block")
+    @Column(name = "end_time_sanction")
     private LocalDateTime endTime;
 
     @Column(name = "reason")
     private String reason;
 
-    @Column(name = "revoked_block")
-    private boolean revokedBlock;
+    @Column(name = "revoked_sanction")
+    private boolean revokedSanction;
 
     //ОТНОШЕНИЯ
 
@@ -49,8 +49,8 @@ public class Blocking implements Serializable {
     private User user;
 
     @ManyToOne
-    @JoinColumn(name = "blocked_by_id", nullable = false)
-    private User blockedBy;
+    @JoinColumn(name = "sanctioned_by_id", nullable = false)
+    private User sanctionedBy;
 
     @ManyToOne
     @JoinColumn(name = "revoked_by_id")
@@ -58,33 +58,31 @@ public class Blocking implements Serializable {
 
     //МЕТОДЫ
 
+
     @Override
     public boolean equals(Object o) {
+        if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
-        Blocking blocking = (Blocking) o;
-        return Objects.equals(id, blocking.id)
-                && Objects.equals(blockingType, blocking.blockingType)
-                && Objects.equals(startTime, blocking.startTime)
-                && Objects.equals(endTime, blocking.endTime)
-                && Objects.equals(reason, blocking.reason);
+        Sanction sanction = (Sanction) o;
+        return revokedSanction == sanction.revokedSanction && Objects.equals(id, sanction.id) && Objects.equals(sanctionType, sanction.sanctionType) && Objects.equals(startTime, sanction.startTime) && Objects.equals(endTime, sanction.endTime) && Objects.equals(reason, sanction.reason);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, blockingType, startTime, endTime, reason);
+        return Objects.hash(id, sanctionType, startTime, endTime, reason, revokedSanction);
     }
 
     @Override
     public String toString() {
-        return "Blocking{" +
+        return "Sanction{" +
                 "id=" + id +
-                ", blockingType='" + blockingType + '\'' +
+                ", sanctionType='" + sanctionType + '\'' +
                 ", startTime=" + startTime +
                 ", endTime=" + endTime +
                 ", reason='" + reason + '\'' +
+                ", revokedSanction=" + revokedSanction +
                 ", user=" + user.getId() +
-                ", blockedBy=" + blockedBy.getId() +
-                ", revokedBlock=" + revokedBlock +
+                ", sanctionedBy=" + sanctionedBy.getId() +
                 ", revokedBy=" + revokedBy.getId() +
                 '}';
     }

@@ -1,10 +1,10 @@
 package com.limed_backend.security.config;
 
-import com.limed_backend.security.entity.Blocking;
+import com.limed_backend.security.entity.Sanction;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.service.BlockingService;
+import com.limed_backend.security.service.SanctionCacheService;
+import com.limed_backend.security.service.SanctionService;
 import com.limed_backend.security.service.UserCacheService;
-import com.limed_backend.security.service.UserService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
@@ -21,12 +21,12 @@ import org.springframework.security.authentication.AnonymousAuthenticationToken;
 @Component
 public class BanCheckFilter extends OncePerRequestFilter {
 
-    private final BlockingService blockingService;
+    private final SanctionCacheService sanctionCache;
     private final UserCacheService userCache;
 
 
-    public BanCheckFilter(BlockingService blockingService, UserCacheService userCache) {
-        this.blockingService = blockingService;
+    public BanCheckFilter(SanctionCacheService sanctionCache, UserCacheService userCache) {
+        this.sanctionCache = sanctionCache;
         this.userCache = userCache;
     }
 
@@ -42,9 +42,9 @@ public class BanCheckFilter extends OncePerRequestFilter {
             }
             User user = userCache.findUserByUsername(auth.getName());
             if (user != null) {
-                List<Blocking> activeBlocks = blockingService.findAllBlocksUser(user, "ban");
-                if (activeBlocks.stream().findAny().isPresent()) {
-                    Blocking banRecord = activeBlocks.getFirst();
+                List<Sanction> activeSanctions = sanctionCache.findAllSanctionsUser(user, "ban");
+                if (activeSanctions.stream().findAny().isPresent()) {
+                    Sanction banRecord = activeSanctions.getFirst();
                     String banReason = banRecord.getReason();
                     response.setContentType("text/plain; charset=UTF-8");
                     response.setStatus(HttpServletResponse.SC_FORBIDDEN);

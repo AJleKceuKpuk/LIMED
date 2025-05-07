@@ -21,5 +21,5 @@ public class UserResponse implements Serializable {
     private LocalDateTime lastActivity;
     private LocalDate dateRegistration;
     private List<String> roles;
-    private List<BlockingResponse> blocking;
+    private List<SanctionResponse> sanctions;
 }

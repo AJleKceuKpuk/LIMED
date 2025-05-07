@@ -4,9 +4,9 @@ import lombok.Data;
 
 
 @Data
-public class GiveBlockRequest {
+public class GiveSanctionRequest {
     private String username;
-    private String blockingType;
+    private String sanctionType;
     private String duration;
     private String reason;
 }

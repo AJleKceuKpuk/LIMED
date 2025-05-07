@@ -12,11 +12,11 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = {BlockingMapper.class})
+@Mapper(componentModel = "spring", uses = {SanctionMapper.class})
 public interface UserMapper {
 
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
-    @Mapping(target = "blocking", source = "blockings")
+    @Mapping(target = "sanctions", source = "sanctions")
     UserResponse toUserResponse(User user);
 
     @Named("mapRoles")

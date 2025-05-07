@@ -1,0 +1,21 @@
+package com.limed_backend.security.repository;
+
+import com.limed_backend.security.entity.Sanction;
+import com.limed_backend.security.entity.User;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface SanctionRepository extends JpaRepository<Sanction, Long> {
+    @Query("SELECT b FROM Sanction b " +
+            "WHERE b.user = :user " +
+            "AND b.sanctionType = :sanctionType " +
+            "AND b.revokedSanction = false")
+    List<Sanction> findActiveSanctions(@Param("user") User user,
+                                       @Param("sanctionType") String sanctionType);
+
+}

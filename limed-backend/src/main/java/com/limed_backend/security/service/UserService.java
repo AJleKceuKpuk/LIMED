@@ -27,7 +27,7 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final TokenService tokenService;
-    private final RoleService roleService;
+    private final RoleCacheService roleCacheService;
     private final PasswordEncoder passwordEncoder;
     private final UserCacheService userCache;
 
@@ -72,7 +72,7 @@ public class UserService {
 
     // Создаем сущность пользователя во время регистрации
     public void createAndSaveUser(RegistrationRequest request) {
-        Role userRole = roleService.getRole("USER");
+        Role userRole = roleCacheService.getRole("USER");
 
         User user = User.builder()
                 .username(request.getUsername())
@@ -115,11 +115,9 @@ public class UserService {
         validateUsernameAvailability(userRequest.getNewUsername());
         tokenService.revokeAllTokens(user.getUsername());
 
-
+        userCache.deleteUserCache(user);
         user.setUsername(userRequest.getNewUsername());
         userRepository.save(user);
-
-        userCache.deleteUserCache(user);
         userCache.addUserCache(user);
 
         return tokenService.generateAndSetTokens(request, user, response);
@@ -131,9 +129,7 @@ public class UserService {
         User user = userCache.findUserByUsername(currentUsername);
         validateEmailAvailability(request.getNewEmail());
         user.setEmail(request.getNewEmail());
-        System.out.println("-----");
         userRepository.save(user);
-        System.out.println("-----");
         userCache.deleteUserCache(user);
         userCache.addUserCache(user);
         return "Email успешно обновлён";

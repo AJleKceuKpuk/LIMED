@@ -28,7 +28,7 @@ public class AdminController {
     private final AdminService adminService;
     private final ChatsService chatsService;
     private final MessagesService messagesService;
-    private final BlockingService blockingService;
+    private final SanctionService sanctionService;
     private final UserCacheService userCache;
 
     @GetMapping("/get-allusers")
@@ -67,17 +67,17 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/give-blocked")
-    public ResponseEntity<String> giveMuted(@RequestBody GiveBlockRequest request,
+    @PostMapping("/give-sanction")
+    public ResponseEntity<String> giveSanction(@RequestBody GiveSanctionRequest request,
                                             Authentication authentication){
-        String result = blockingService.giveBlock(request, authentication);
+        String result = sanctionService.giveSanction(request, authentication);
         return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/unblock")
-    public ResponseEntity<String> unblock(@RequestBody UnblockRequest request,
+    @PostMapping("/unsanctioned")
+    public ResponseEntity<String> unsanctioned(@RequestBody UnsanctionedRequest request,
                                           Authentication authentication){
-        String result = blockingService.unblock(request, authentication);
+        String result = sanctionService.unsanctioned(request, authentication);
         return ResponseEntity.ok(result);
     }
 

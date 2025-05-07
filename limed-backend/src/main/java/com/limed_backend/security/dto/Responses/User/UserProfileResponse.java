@@ -10,8 +10,10 @@ import java.time.LocalDate;
 @Data
 @AllArgsConstructor
 public class UserProfileResponse implements Serializable {
+
     @Serial
     private static final long serialVersionUID = 1L;
+
     private Long id;
     private String username;
     private String email;

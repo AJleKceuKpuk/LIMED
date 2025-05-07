@@ -62,7 +62,7 @@ public class User implements Serializable {
             orphanRemoval = true,
             fetch = FetchType.LAZY)
     @Builder.Default
-    private List<Blocking> blockings = new ArrayList<>();
+    private List<Sanction> sanctions = new ArrayList<>();
 
     @OneToMany(mappedBy = "sender",
             cascade = {CascadeType.REMOVE, CascadeType.REFRESH, CascadeType.DETACH},

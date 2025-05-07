@@ -1,12 +1,11 @@
     package com.limed_backend.security.config;
 
-    import com.limed_backend.security.service.BlockingService;
+    import com.limed_backend.security.service.SanctionCacheService;
+    import com.limed_backend.security.service.SanctionService;
     import com.limed_backend.security.service.UserCacheService;
-    import com.limed_backend.security.service.UserService;
     import lombok.RequiredArgsConstructor;
     import org.springframework.context.annotation.Bean;
     import org.springframework.context.annotation.Configuration;
-    import org.springframework.http.HttpMethod;
     import org.springframework.security.authentication.AuthenticationManager;
     import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
     import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -37,8 +36,8 @@
         }
 
         @Bean
-        public BanCheckFilter banCheckFilter(BlockingService blockingService, UserCacheService userCache) {
-            return new BanCheckFilter(blockingService, userCache);
+        public BanCheckFilter banCheckFilter(SanctionCacheService sanctionCache, UserCacheService userCache) {
+            return new BanCheckFilter(sanctionCache, userCache);
         }
 
         @Bean

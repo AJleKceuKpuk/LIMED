@@ -33,19 +33,15 @@ public class UserCacheService {
     // добавляем в кэш пользователя
     public void addUserCache(User user) {
         Cache userCache = cacheManager.getCache("userCache");
-        if (userCache != null) {
-            userCache.put(user.getId(), user);
-            userCache.put(user.getUsername(), user);
-        }
+        userCache.put(user.getId(), user);
+        userCache.put(user.getUsername(), user);
     }
 
     //удаляем пользователя из кэша
     public void deleteUserCache(User user){
         Cache userCache = cacheManager.getCache("userCache");
-        if (userCache != null) {
-            userCache.evict(user.getId());
-            userCache.evict(user.getUsername());
-        }
+        userCache.evict(user.getId());
+        userCache.evict(user.getUsername());
     }
 
 

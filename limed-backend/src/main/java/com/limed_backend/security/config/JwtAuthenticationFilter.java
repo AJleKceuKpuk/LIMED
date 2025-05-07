@@ -1,5 +1,6 @@
 package com.limed_backend.security.config;
 
+import com.limed_backend.security.service.TokenCacheService;
 import com.limed_backend.security.service.TokenService;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -31,6 +32,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     private ImplUserDetailsService customUserDetailsService;
     @Autowired
     private TokenService tokenService;
+    @Autowired
+    private TokenCacheService tokenCache;
 
 
     public JwtAuthenticationFilter() {
@@ -53,7 +56,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
         if (StringUtils.hasText(jwt) && jwtCore.validateToken(jwt, null)) {
 
             String jti = jwtCore.getJti(jwt);
-            Token tokenRecord = tokenService.getTokenByJti(jti);
+            Token tokenRecord = tokenCache.getTokenByJti(jti);
             if (tokenRecord == null || tokenRecord.getRevoked() || tokenRecord.getExpiration().before(new Date())) {
                 response.setStatus(HttpServletResponse.SC_FORBIDDEN);
                 response.getWriter().write("Token is revoked or invalid.");

@@ -23,6 +23,7 @@ public class AuthService {
     private final UserService userService;
     private final AuthenticationManager authenticationManager;
     private final UserCacheService userCache;
+    private final TokenCacheService tokenCache;
 
 
     // регистрация пользователей
@@ -55,7 +56,7 @@ public class AuthService {
             return ResponseEntity.ok("Без авторизации нельзя");
         }
         User user = userCache.findUserByUsername(jwtCore.getUsernameFromToken(accessToken));
-        tokenService.revokeToken(jwtCore.getJti(accessToken));
+        tokenCache.revokeToken(jwtCore.getJti(accessToken));
         userService.updateUserStatus(user.getId(), "offline");
         return ResponseEntity.ok("Вы успешно вышли из системы. Токены деактивированы.");
     }

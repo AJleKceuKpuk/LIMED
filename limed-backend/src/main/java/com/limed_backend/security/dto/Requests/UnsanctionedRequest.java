@@ -3,7 +3,7 @@ package com.limed_backend.security.dto.Requests;
 import lombok.Data;
 
 @Data
-public class UnblockRequest {
-    private String blockingType;
+public class UnsanctionedRequest {
+    private String sanctionType;
     private String username;
 }

@@ -30,6 +30,7 @@ public class UserController {
 
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getProfile(Authentication authentication) {
+        System.out.println("/profile");
         UserProfileResponse user = userService.getProfile(authentication);
         return ResponseEntity.ok(user);
     }
@@ -46,6 +47,7 @@ public class UserController {
     @PutMapping("/update-email")
     public ResponseEntity<String> updateEmail(@RequestBody UpdateEmailRequest request,
                                               Authentication authentication) {
+        System.out.println("/update-email");
         String result = userService.updateEmail(authentication.getName(), request);
         return ResponseEntity.ok(result);
     }
@@ -53,6 +55,7 @@ public class UserController {
     @PutMapping("/update-password")
     public ResponseEntity<String> updatePassword(@RequestBody UpdatePasswordRequest request,
                                                  Authentication authentication) {
+        System.out.println("/update-password");
         String resultMessage = userService.updatePassword(authentication.getName(), request);
         return ResponseEntity.ok(resultMessage);
     }

@@ -9,7 +9,7 @@ import org.springframework.stereotype.Service;
 
 @Service
 @RequiredArgsConstructor
-public class RoleService {
+public class RoleCacheService {
 
     private final RoleRepository roleRepository;
 
