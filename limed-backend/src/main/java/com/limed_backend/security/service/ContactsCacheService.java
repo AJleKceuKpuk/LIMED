@@ -19,7 +19,6 @@ public class ContactsCacheService {
     private final CacheManager cacheManager;
     private final ContactsRepository contactsRepository;
 
-
     //All accept contacts
     @Cacheable(cacheManager = "contacts", key = "user.id")
     public List<Contacts> findAllAccept(Long id){
@@ -53,9 +52,11 @@ public class ContactsCacheService {
     public List<Contacts> getListContactsFromCache(Cache cache, User user) {
         List<?> rawList = cache.get(user.getId(), List.class);
         List<Contacts> listContacts = new ArrayList<>();
-        for (Object item : rawList) {
-            if (item instanceof Contacts) {
-                listContacts.add((Contacts) item);
+        if (rawList != null) {
+            for (Object item : rawList) {
+                if (item instanceof Contacts) {
+                    listContacts.add((Contacts) item);
+                }
             }
         }
         return listContacts;
@@ -87,22 +88,4 @@ public class ContactsCacheService {
         }
         cache.put(user.getId(), contacts);
     }
-
-
-
-
-        //FIXME
-    public void evictContactsCaches(User user) {
-        Cache contactsCache = cacheManager.getCache("ContactsCache");
-        String KeyPending = user.getUsername() + "-Pending";
-        String KeyInvitation = user.getUsername() + "-Invitation";
-        String keyIgnore = user.getUsername() + "-Ignore";
-        String KeyGeneral = String.valueOf(user.getId());
-
-        contactsCache.evict(KeyPending);
-        contactsCache.evict(KeyInvitation);
-        contactsCache.evict(keyIgnore);
-        contactsCache.evict(KeyGeneral);
-    }
-
 }

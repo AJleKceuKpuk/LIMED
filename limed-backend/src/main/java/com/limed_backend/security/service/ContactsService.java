@@ -8,7 +8,6 @@ import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.ContactsMapper;
 import com.limed_backend.security.repository.ContactsRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.CacheManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -71,7 +70,7 @@ public class ContactsService {
         return contactsRepository.findContactBetween(senderId, receiverId, "Accepted");
     }
 
-    //поиск связи в одностороннем порядке
+    //поиск связи в одну сторону
     public Optional<Contacts> findDirectStatus(Long senderId, Long receiverId, String status){
         return contactsRepository.findDirectContact(senderId, receiverId, status);
     }
@@ -82,6 +81,7 @@ public class ContactsService {
     }
 
     //================= МЕТОДЫ =================//
+
     // Метод добавления дружбы
     @Transactional
     public String addContacts(Authentication authentication, Long receiverId) {
@@ -204,13 +204,15 @@ public class ContactsService {
     public String cancelContacts(Authentication authentication, Long senderId) {
         User receiver = userCache.findUserByUsername(authentication.getName());
         User sender = userCache.findUserById(senderId);
-        Optional<Contacts> contactsInvitation = findDirectStatus(senderId, receiver.getId(), "Pending");
-        if (contactsInvitation.isEmpty()) {
-            throw new ResourceNotFoundException("У Вас нет предложений для дружбы от пользователя с id " + senderId);
-        }
-        contactsRepository.delete(contactsInvitation.get());
-        contactsCache.evictContactsCaches(receiver);
-        contactsCache.evictContactsCaches(sender);
+
+        Contacts contactsInvite = findDirectStatus(senderId, receiver.getId(), "Pending")
+                .orElseThrow(() -> new ResourceNotFoundException("У вас нет предложений для дружбы от пользователя с id " + senderId));
+
+        contactsRepository.delete(contactsInvite);
+
+        contactsCache.removeContactsFromCache(sender, contactsInvite, "contacts-pending");
+        contactsCache.removeContactsFromCache(receiver, contactsInvite, "contacts-invite");
+
         return "Предложение отклонено";
     }
 
@@ -221,13 +223,15 @@ public class ContactsService {
         if (receiver.getId().equals(senderId)) {
             return "Вы являетесь этим пользователем, удалить невозможно";
         }
-        Optional<Contacts> acceptedContacts = findContactsAccepted(senderId, receiver.getId());
-        if (acceptedContacts.isEmpty()) {
-            return "Контакт не найден";
-        }
-        contactsRepository.delete(acceptedContacts.get());
-        contactsCache.evictContactsCaches(receiver);
-        contactsCache.evictContactsCaches(sender);
+
+        Contacts acceptedContacts = findContactsAccepted(senderId, receiver.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не является вашим другом"));
+
+        contactsRepository.delete(acceptedContacts);
+
+        contactsCache.removeContactsFromCache(sender, acceptedContacts, "contacts");
+        contactsCache.removeContactsFromCache(receiver, acceptedContacts, "contacts");
+
         return "Пользователь удален из списка друзей";
     }
 
@@ -236,13 +240,14 @@ public class ContactsService {
         User sender = userCache.findUserByUsername(authentication.getName());
         User receiver = userCache.findUserById(receiverId);
 
-        Optional<Contacts> ignoreUser = findDirectStatus(sender.getId(), receiverId, "Ignore");
-        if (ignoreUser.isEmpty()) {
-            throw new ResourceNotFoundException("У Вас нет игнорируемых пользователей");
-        }
-        contactsRepository.delete(ignoreUser.get());
-        contactsCache.evictContactsCaches(receiver);
-        contactsCache.evictContactsCaches(sender);
+        Contacts ignoreUser = findDirectStatus(sender.getId(), receiverId, "Ignore")
+                .orElseThrow(() -> new ResourceNotFoundException("Вы не игнорируете данного пользователя"));
+
+        contactsRepository.delete(ignoreUser);
+
+        contactsCache.removeContactsFromCache(sender, ignoreUser, "contacts-ignore");
+        contactsCache.removeContactsFromCache(receiver, ignoreUser, "contacts-ignore");
+
         return "Пользователь " + receiver.getUsername() + " разблокирован";
     }
 }
