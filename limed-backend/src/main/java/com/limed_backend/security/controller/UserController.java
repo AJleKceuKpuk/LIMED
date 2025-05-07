@@ -4,8 +4,11 @@ import com.limed_backend.security.dto.Responses.*;
 import com.limed_backend.security.dto.Requests.UpdateEmailRequest;
 import com.limed_backend.security.dto.Requests.UpdatePasswordRequest;
 import com.limed_backend.security.dto.Requests.UpdateUsernameRequest;
+import com.limed_backend.security.dto.Responses.Contact.NoFriendResponse;
+import com.limed_backend.security.dto.Responses.Contact.FriendResponse;
 import com.limed_backend.security.dto.Responses.User.UserProfileResponse;
 import com.limed_backend.security.entity.User;
+import com.limed_backend.security.service.ContactsCacheService;
 import com.limed_backend.security.service.ContactsService;
 import com.limed_backend.security.service.UserCacheService;
 import com.limed_backend.security.service.UserService;
@@ -61,27 +64,27 @@ public class UserController {
     }
 
     @GetMapping("/contacts")
-    public ResponseEntity<List<ContactsResponse>> getContacts(Authentication authentication) {
+    public ResponseEntity<List<FriendResponse>> getContacts(Authentication authentication) {
         User user = userCache.findUserByUsername(authentication.getName());
-        List<ContactsResponse> friends = contactsService.findAllContacts(user);
+        List<FriendResponse> friends = contactsService.findAcceptContacts(user);
         return ResponseEntity.ok(friends);
     }
 
     @GetMapping("/contacts/pending")
-    public ResponseEntity<List<ContactsPendingResponse>> getPendingContacts(Authentication authentication) {
-        List<ContactsPendingResponse> pendingFriends = contactsService.findPendingContacts(authentication);
+    public ResponseEntity<List<NoFriendResponse>> getPendingContacts(Authentication authentication) {
+        List<NoFriendResponse> pendingFriends = contactsService.findPendingContacts(authentication);
         return ResponseEntity.ok(pendingFriends);
     }
 
     @GetMapping("/contacts/invitation")
-    public ResponseEntity<List<ContactsPendingResponse>> getInvitationContacts(Authentication authentication) {
-        List<ContactsPendingResponse> invitationFriends = contactsService.findInvitationContacts(authentication);
+    public ResponseEntity<List<NoFriendResponse>> getInvitationContacts(Authentication authentication) {
+        List<NoFriendResponse> invitationFriends = contactsService.findInviteContacts(authentication);
         return ResponseEntity.ok(invitationFriends);
     }
 
     @GetMapping("/contacts/ignore")
-    public ResponseEntity<List<ContactsPendingResponse>> getIgnoreList(Authentication authentication) {
-        List<ContactsPendingResponse> invitationFriends = contactsService.findIgnoreContacts(authentication);
+    public ResponseEntity<List<NoFriendResponse>> getIgnoreList(Authentication authentication) {
+        List<NoFriendResponse> invitationFriends = contactsService.findIgnoreContacts(authentication);
         return ResponseEntity.ok(invitationFriends);
     }
 

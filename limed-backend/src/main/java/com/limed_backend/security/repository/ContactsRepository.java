@@ -12,6 +12,33 @@ import java.util.Optional;
 @Repository
 public interface ContactsRepository extends JpaRepository<Contacts, Long> {
 
+    //находит все контакты, что связаны с user связью Accepted
+    @Query("SELECT c FROM Contacts c " +
+            "WHERE c.status = 'Accepted' " +
+            "AND (c.sender.id = :userId OR c.receiver.id = :userId)")
+    Optional<List<Contacts>> findAcceptedByUser(@Param("userId") Long userId);
+
+    //находит все контакты, где sender добавил в ЧС (Ignore) receiver
+    @Query("SELECT c FROM Contacts c " +
+            "WHERE c.status = 'Ignore' " +
+            "AND (c.sender.id = :userId)")
+    Optional<List<Contacts>> findIgnoreByUser(@Param("userId") Long userId);
+
+    //находит все контакты, где sender отправил запрос receiver подружиться
+    @Query("SELECT c FROM Contacts c " +
+            "WHERE c.status = 'Pending' " +
+            "AND (c.sender.id = :userId)")
+    Optional<List<Contacts>> findPendingByUser(@Param("userId") Long userId);
+
+    //находит все контакты, где sender отправил запрос receiver подружиться
+    @Query("SELECT c FROM Contacts c " +
+            "WHERE c.status = 'Pending' " +
+            "AND (c.receiver.id = :userId)")
+    Optional<List<Contacts>> findInviteByUser(@Param("userId") Long userId);
+
+
+
+
     // Находит связь между пользователями с учетом статуса в 1 сторону sender -> receiver
     @Query("SELECT c FROM Contacts c " +
             "WHERE c.sender.id = :senderId " +
@@ -30,11 +57,7 @@ public interface ContactsRepository extends JpaRepository<Contacts, Long> {
                                               @Param("user2") Long user2,
                                               @Param("status") String status);
 
-    //находит все контакты, что связаны с user связью Accepted
-    @Query("SELECT c FROM Contacts c " +
-            "WHERE c.status = 'Accepted' " +
-            "AND (c.sender.id = :userId OR c.receiver.id = :userId)")
-    List<Contacts> findAcceptedByUser(@Param("userId") Long userId);
+
 
     // Выбирает контакты по отправителю (исходящие запросы) с заданным статусом
     List<Contacts> findBySender_IdAndStatus(Long senderId, String status);

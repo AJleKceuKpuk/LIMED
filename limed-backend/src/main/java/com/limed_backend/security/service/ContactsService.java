@@ -1,18 +1,17 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Responses.ContactsPendingResponse;
-import com.limed_backend.security.dto.Responses.ContactsResponse;
+import com.limed_backend.security.dto.Responses.Contact.NoFriendResponse;
+import com.limed_backend.security.dto.Responses.Contact.FriendResponse;
 import com.limed_backend.security.entity.Contacts;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.ContactsMapper;
 import com.limed_backend.security.repository.ContactsRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.Optional;
@@ -22,87 +21,52 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ContactsService {
 
-    private final UserService userService;
     private final ContactsRepository contactsRepository;
     private final ContactsMapper contactsMapper;
-    private final CacheManager cacheManager;
     private final UserCacheService userCache;
+    private final ContactsCacheService contactsCache;
 
-    public void evictContactsCaches(User user) {
-        Cache contactsCache = cacheManager.getCache("ContactsCache");
-        if (contactsCache != null) {
+    //================= СПИСКИ =================//
 
-            String KeyPending = user.getUsername() + "-Pending";
-            String KeyInvitation = user.getUsername() + "-Invitation";
-            String keyIgnore = user.getUsername() + "-Ignore";
-            String KeyGeneral = String.valueOf(user.getId());
-
-            contactsCache.evict(KeyPending);
-            contactsCache.evict(KeyInvitation);
-            contactsCache.evict(keyIgnore);
-            contactsCache.evict(KeyGeneral);
-        }
-    }
-
-    //=====================================================//
     // Список всех друзей пользователя
-    @Cacheable(value = "ContactsCache", key = "#user.id")
-    public List<ContactsResponse> findAllContacts(User user) {
-        List<Contacts> contacts = contactsRepository.findAcceptedByUser(user.getId());
+    public List<FriendResponse> findAcceptContacts(User user) {
+        List<Contacts> contacts = contactsCache.findAllAccept(user.getId());
         return contacts.stream()
-                .map(contact -> contactsMapper.toContactsResponse(contact, user.getId()))
+                .map(contact -> contactsMapper.toFriendResponse(contact, user.getId()))
                 .collect(Collectors.toList());
     }
 
     // Исходящие заявки
-    @Cacheable(value = "ContactsCache", key = "#authentication.name + '-Pending'")
-    public List<ContactsPendingResponse> findPendingContacts(Authentication authentication) {
+    public List<NoFriendResponse> findPendingContacts(Authentication authentication) {
         User sender = userCache.findUserByUsername(authentication.getName());
-        List<Contacts> outgoingRequests = contactsRepository.findBySender_IdAndStatus(sender.getId(), "Pending");
-        return outgoingRequests.stream()
-                .map(contacts -> {
-                    ContactsResponse response = contactsMapper.toContactsResponse(contacts, sender.getId());
-                    ContactsPendingResponse pendingResponse = new ContactsPendingResponse();
-                    pendingResponse.setId(response.getId());
-                    pendingResponse.setUsername(response.getUsername());
-                    return pendingResponse;
-                })
+        List<Contacts> pendingContacts = contactsCache.findAllPending(sender.getId());
+        return pendingContacts.stream()
+                .map(contact -> contactsMapper.toNoFriendResponse(contact, sender.getId()))
                 .collect(Collectors.toList());
     }
 
     // Входящие заявки
-    @Cacheable(value = "ContactsCache", key = "#authentication.name + '-Invitation'")
-    public List<ContactsPendingResponse> findInvitationContacts(Authentication authentication) {
+    public List<NoFriendResponse> findInviteContacts(Authentication authentication) {
         User receiver = userCache.findUserByUsername(authentication.getName());
-        List<Contacts> incomingRequests = contactsRepository.findByReceiver_IdAndStatus(receiver.getId(), "Pending");
-        return incomingRequests.stream()
-                .map(contacts -> {
-                    ContactsResponse response = contactsMapper.toContactsResponse(contacts, receiver.getId());
-                    ContactsPendingResponse pendingResponse = new ContactsPendingResponse();
-                    pendingResponse.setId(response.getId());
-                    pendingResponse.setUsername(response.getUsername());
-                    return pendingResponse;
-                })
+
+        List<Contacts> inviteContacts = contactsCache.findAllInvite(receiver.getId());
+        return inviteContacts.stream()
+                .map(contact -> contactsMapper.toNoFriendResponse(contact, receiver.getId()))
                 .collect(Collectors.toList());
     }
 
     //Черный список
-    @Cacheable(value = "ContactsCache", key = "#authentication.name + '-Ignore'")
-    public List<ContactsPendingResponse> findIgnoreContacts(Authentication authentication) {
+    public List<NoFriendResponse> findIgnoreContacts(Authentication authentication) {
         User sender = userCache.findUserByUsername(authentication.getName());
-        List<Contacts> outgoingRequests = contactsRepository.findBySender_IdAndStatus(sender.getId(), "Ignore");
-        return outgoingRequests.stream()
-                .map(contacts -> {
-                    ContactsResponse response = contactsMapper.toContactsResponse(contacts, sender.getId());
-                    ContactsPendingResponse pendingResponse = new ContactsPendingResponse();
-                    pendingResponse.setId(response.getId());
-                    pendingResponse.setUsername(response.getUsername());
-                    return pendingResponse;
-                })
+        List<Contacts> ignoreContacts = contactsCache.findAllIgnore(sender.getId());
+        return ignoreContacts.stream()
+                .map(contact -> contactsMapper.toNoFriendResponse(contact, sender.getId()))
                 .collect(Collectors.toList());
     }
 
-    // Поиск связи между пользователями со статусом
+    //================= ПРОВЕРКИ =================//
+
+    // Поиск связи между пользователями со статусом Accepted
     public Optional<Contacts> findContactsAccepted(Long senderId, Long receiverId) {
         return contactsRepository.findContactBetween(senderId, receiverId, "Accepted");
     }
@@ -117,8 +81,9 @@ public class ContactsService {
         return contactsRepository.findContactBetween(senderId, receiverId, "Accepted").isPresent();
     }
 
-    //=====================================================//
+    //================= МЕТОДЫ =================//
     // Метод добавления дружбы
+    @Transactional
     public String addContacts(Authentication authentication, Long receiverId) {
         User sender = userCache.findUserByUsername(authentication.getName());
         User receiver = userCache.findUserById(receiverId);
@@ -126,41 +91,41 @@ public class ContactsService {
         if (sender.getId().equals(receiverId)) {
             return "Вы не можете себе отправить дружбу";
         }
+
         Optional<Contacts> alreadyIgnored = findDirectStatus(receiver.getId(),sender.getId(), "Ignore");
         if(alreadyIgnored.isPresent()) {
             return "Пользователь заблокировал Вас";
         }
-
         if (isAcceptedContacts(sender.getId(), receiver.getId())) {
             return "Пользователь является вашим другом";
         }
-
-        Optional<Contacts> outgoingInvitation = findDirectStatus(sender.getId(), receiver.getId(), "Pending");
-        if (outgoingInvitation.isPresent()) {
+        Optional<Contacts> pending = findDirectStatus(sender.getId(), receiver.getId(), "Pending");
+        if (pending.isPresent()) {
             return "Предложение подружиться уже отправлено";
         }
-
-        Optional<Contacts> contactInvitation = findDirectStatus(receiver.getId(), sender.getId(), "Pending");
-        if (contactInvitation.isPresent()) {
-            Contacts contact = contactInvitation.get();
+        Optional<Contacts> invite = findDirectStatus(receiver.getId(), sender.getId(), "Pending");
+        if (invite.isPresent()) {
+            Contacts contact = invite.get();
             contact.setStatus("Accepted");
             contactsRepository.save(contact);
 
-            evictContactsCaches(receiver);
-            evictContactsCaches(sender);
+            contactsCache.removeContactsFromCache(receiver, contact, "contacts-pending");
+            contactsCache.removeContactsFromCache(sender, contact, "contacts-invite");
+            contactsCache.addContactToCache(sender, contact, "contacts");
+            contactsCache.addContactToCache(receiver, contact, "contacts");
 
             return "Предложение подружиться принято";
         }
 
-        Contacts newInvitation = Contacts.builder()
+        Contacts newContact = Contacts.builder()
                 .sender(sender)
                 .receiver(receiver)
                 .status("Pending")
                 .build();
-        contactsRepository.save(newInvitation);
+        contactsRepository.save(newContact);
 
-        evictContactsCaches(receiver);
-        evictContactsCaches(sender);
+        contactsCache.addContactToCache(sender, newContact, "contacts-pending");
+        contactsCache.addContactToCache(receiver, newContact, "contacts-pending");
 
         return "Предложение подружиться отправлено";
     }
@@ -168,12 +133,11 @@ public class ContactsService {
     //Добавить в черный список
     public String addIgnore(Authentication authentication, Long receiverId) {
         User sender = userCache.findUserByUsername(authentication.getName());
+        User receiver = userCache.findUserById(receiverId);
 
         if (sender.getId().equals(receiverId)) {
             return "Вы не можете игнорировать себя";
         }
-
-        User receiver = userCache.findUserById(receiverId);
         if (isAcceptedContacts(sender.getId(), receiver.getId())) {
             return "Пользователь является вашим другом";
         }
@@ -183,12 +147,19 @@ public class ContactsService {
             return "Пользователь уже заблокирован";
         }
 
-        Optional<Contacts> outgoingInvitation = findDirectStatus(sender.getId(), receiver.getId(), "Pending");
-        Optional<Contacts> incomingInvitation = findDirectStatus(receiver.getId(), sender.getId(), "Pending");
+        Contacts outgoingInvitation = findDirectStatus(sender.getId(), receiver.getId(), "Pending").orElse(null);
+        Contacts incomingInvitation = findDirectStatus(receiver.getId(), sender.getId(), "Pending").orElse(null);
 
-        if (incomingInvitation.isPresent()) {
-            contactsRepository.delete(incomingInvitation.get());
-        } else outgoingInvitation.ifPresent(contactsRepository::delete);
+        if (incomingInvitation != null) {
+            contactsRepository.delete(incomingInvitation);
+            contactsCache.removeContactsFromCache(receiver, incomingInvitation, "contacts-pending");
+            contactsCache.removeContactsFromCache(sender, incomingInvitation, "contacts-invite");
+        }
+        if (outgoingInvitation != null){
+            contactsRepository.delete(outgoingInvitation);
+            contactsCache.removeContactsFromCache(sender, outgoingInvitation, "contacts-pending");
+            contactsCache.removeContactsFromCache(receiver, outgoingInvitation, "contacts-invite");
+        }
 
         Contacts newIgnore = Contacts.builder()
                 .sender(sender)
@@ -196,11 +167,13 @@ public class ContactsService {
                 .status("Ignore")
                 .build();
         contactsRepository.save(newIgnore);
-        if (incomingInvitation.isPresent() || outgoingInvitation.isPresent()) {
+
+        contactsCache.addContactToCache(sender, newIgnore, "contacts-ignore");
+
+        if (incomingInvitation != null || outgoingInvitation != null) {
             return "Предложение подружиться отклонено, и пользователь заблокирован";
         }
-        evictContactsCaches(receiver);
-        evictContactsCaches(sender);
+
         return "Пользователь заблокирован";
     }
 
@@ -213,17 +186,17 @@ public class ContactsService {
             return "Пользователь уже является вашим другом";
         }
 
-        Optional<Contacts> contactsInvitationOpt = findDirectStatus(senderId, receiver.getId(), "Pending");
-        if (contactsInvitationOpt.isEmpty()) {
-            throw new ResourceNotFoundException("У вас нет предложений для дружбы от пользователя с id " + senderId);
-        }
+        Contacts contactsInvite = findDirectStatus(senderId, receiver.getId(), "Pending")
+                .orElseThrow(() -> new ResourceNotFoundException("У вас нет предложений для дружбы от пользователя с id " + senderId));
 
-        Contacts contactsInvitation = contactsInvitationOpt.get();
-        contactsInvitation.setStatus("Accepted");
-        contactsRepository.save(contactsInvitation);
+        contactsInvite.setStatus("Accepted");
+        contactsRepository.save(contactsInvite);
 
-        evictContactsCaches(receiver);
-        evictContactsCaches(sender);
+        contactsCache.removeContactsFromCache(sender, contactsInvite, "contacts-pending");
+        contactsCache.removeContactsFromCache(receiver, contactsInvite, "contacts-invite");
+        contactsCache.addContactToCache(sender, contactsInvite, "contacts");
+        contactsCache.addContactToCache(receiver, contactsInvite, "contacts");
+
         return "Предложение принято";
     }
 
@@ -236,8 +209,8 @@ public class ContactsService {
             throw new ResourceNotFoundException("У Вас нет предложений для дружбы от пользователя с id " + senderId);
         }
         contactsRepository.delete(contactsInvitation.get());
-        evictContactsCaches(receiver);
-        evictContactsCaches(sender);
+        contactsCache.evictContactsCaches(receiver);
+        contactsCache.evictContactsCaches(sender);
         return "Предложение отклонено";
     }
 
@@ -253,8 +226,8 @@ public class ContactsService {
             return "Контакт не найден";
         }
         contactsRepository.delete(acceptedContacts.get());
-        evictContactsCaches(receiver);
-        evictContactsCaches(sender);
+        contactsCache.evictContactsCaches(receiver);
+        contactsCache.evictContactsCaches(sender);
         return "Пользователь удален из списка друзей";
     }
 
@@ -268,8 +241,8 @@ public class ContactsService {
             throw new ResourceNotFoundException("У Вас нет игнорируемых пользователей");
         }
         contactsRepository.delete(ignoreUser.get());
-        evictContactsCaches(receiver);
-        evictContactsCaches(sender);
+        contactsCache.evictContactsCaches(receiver);
+        contactsCache.evictContactsCaches(sender);
         return "Пользователь " + receiver.getUsername() + " разблокирован";
     }
 }
