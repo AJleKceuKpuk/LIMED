@@ -2,7 +2,6 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.entity.Contacts;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.repository.ContactsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -20,7 +19,7 @@ public class ContactsCacheService {
     private final CacheManager cacheManager;
     private final ContactsRepository contactsRepository;
 
-    //All accept contacts
+    //Список друзей
     @Cacheable(value = "contacts", key = "#id")
     public List<Contacts> findAllAccept(Long id){
         System.out.println("find test");
@@ -28,21 +27,21 @@ public class ContactsCacheService {
                 .orElseGet(ArrayList::new);
     }
 
-    //All ignore list
+    //Список игнорируемых
     @Cacheable(value = "contacts-ignore", key = "#id")
     public List<Contacts> findAllIgnore(Long id){
         return contactsRepository.findIgnoreByUser(id)
                 .orElseGet(ArrayList::new);
     }
 
-    //All pending contacts
+    //список исходящих
     @Cacheable(value = "contacts-pending", key = "#id")
     public List<Contacts> findAllPending(Long id){
         return contactsRepository.findPendingByUser(id)
                 .orElseGet(ArrayList::new);
     }
 
-    //All Invite
+    //список входящих
     @Cacheable(value = "contacts-invite", key = "#id")
     public List<Contacts> findAllInvite(Long id){
         return contactsRepository.findInviteByUser(id)
