@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface ChatsRepository extends JpaRepository<Chats, Long> {
@@ -20,15 +21,15 @@ public interface ChatsRepository extends JpaRepository<Chats, Long> {
                 "INNER JOIN chat_users cu ON c.id = cu.chat_id " +
                 "WHERE cu.user_id = :userId " +
                 "  AND cu.status = :status", nativeQuery = true)
-        List<Chats> findChatsByUserAndStatus(@Param("userId") Long userId,
-                                             @Param("status") String status);
+        Optional<List<Chats>> findChatsByUserAndStatus(@Param("userId") Long userId,
+                                                      @Param("status") String status);
 
         //поиск чатов по пользователю
         @Query(value = "SELECT DISTINCT c.* " +
                 "FROM chats c " +
                 "INNER JOIN chat_users cu ON c.id = cu.chat_id " +
                 "WHERE cu.user_id = :userId", nativeQuery = true)
-        List<Chats> findChatsByUser(@Param("userId") Long userId);
+        Optional<List<Chats>> findChatsByUser(@Param("userId") Long userId);
 
 }
 

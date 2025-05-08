@@ -22,6 +22,7 @@ public class TokenController {
             String newAccessToken = tokenService.refreshAccessToken(request);
             return ResponseEntity.ok(new TokenResponse(newAccessToken));
         } catch (JwtException ex) {
+
             return ResponseEntity
                     .status(HttpStatus.UNAUTHORIZED)
                     .body(ex.getMessage());

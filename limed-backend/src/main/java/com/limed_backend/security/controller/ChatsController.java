@@ -4,7 +4,7 @@ import com.limed_backend.security.dto.Requests.CreateChatRequest;
 import com.limed_backend.security.dto.Requests.MessageRequest;
 import com.limed_backend.security.dto.Requests.RenameChatRequest;
 import com.limed_backend.security.dto.Requests.UsersChatRequest;
-import com.limed_backend.security.dto.Responses.ChatResponse;
+import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ChatsService;
@@ -32,7 +32,7 @@ public class ChatsController {
 
     @GetMapping("/all")
     public ResponseEntity<List<ChatResponse>> getChats(Authentication authentication){
-        return ResponseEntity.ok(chatsService.findUserChats(authentication));
+        return ResponseEntity.ok(chatsService.findAllChatsUser(authentication));
     }
 
     @PostMapping("/create")

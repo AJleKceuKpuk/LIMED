@@ -126,4 +126,22 @@ public class JwtCore {
         }
         return true;
     }
+
+
+    public boolean validateTokenIgnoringExpiration(String token) {
+        try {
+
+            Jwts.parserBuilder()
+                    .setSigningKey(getSigningKey())
+                    .build()
+                    .parseClaimsJws(token);
+            return true;
+        } catch (ExpiredJwtException e) {
+            return true;
+        } catch (JwtException e) {
+            // Другие ошибки валидации (неверная подпись, повреждённый формат и т.п.)
+            return false;
+        }
+
+    }
 }

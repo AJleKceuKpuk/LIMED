@@ -49,7 +49,6 @@ public class Chats implements Serializable {
     @Builder.Default
     private List<ChatUser> chatUsers = new ArrayList<>();
 
-
     @OneToMany(mappedBy = "chat",
             cascade = {CascadeType.DETACH, CascadeType.REFRESH, CascadeType.REMOVE},
             orphanRemoval = true,

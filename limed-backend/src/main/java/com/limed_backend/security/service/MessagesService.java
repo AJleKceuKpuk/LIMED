@@ -2,7 +2,7 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Requests.CreateChatRequest;
 import com.limed_backend.security.dto.Requests.MessageRequest;
-import com.limed_backend.security.dto.Responses.ChatResponse;
+import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.Messages;
@@ -33,6 +33,7 @@ public class MessagesService {
     private final MessageRepository messageRepository;
     private final ChatsRepository chatsRepository;
     private final UserCacheService userCache;
+    private final ChatsCacheService chatsCache;
 
 
     //получаем сообщение по ID
@@ -44,7 +45,7 @@ public class MessagesService {
     //получить все сообщения с чата
     public Page<MessageResponse> findMessagesFromChat(Authentication authentication, Long chatId, int size, int page) {
         User user = userCache.findUserByUsername(authentication.getName());
-        Chats chat = chatsService.findChatById(chatId);
+        Chats chat = chatsCache.findChatById(chatId);
         boolean isMember = chat.getChatUsers()
                 .stream()
                 .anyMatch(chatUser -> chatUser.getUser().getId().equals(user.getId()));
@@ -89,7 +90,7 @@ public class MessagesService {
         User sender = userCache.findUserByUsername(authentication.getName());
         Chats chat;
         if (request.getChatId() != null){
-            chat = chatsService.findChatById(request.getChatId());
+            chat = chatsCache.findChatById(request.getChatId());
             if ("Deleted".equals(chat.getStatus())){
                 if ("PRIVATE".equals(chat.getType())){
                     chat.setStatus("Active");
@@ -111,7 +112,7 @@ public class MessagesService {
                     createChatRequest.setUsersId(users);
                     createChatRequest.setType("PRIVATE");
                     ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
-                    chat = chatsService.findChatById(chatResponse.getId());
+                    chat = chatsCache.findChatById(chatResponse.getId());
 
                 }else if ("Deleted".equals(chat.getStatus())){
                     chat.setStatus("Active");
@@ -123,7 +124,7 @@ public class MessagesService {
                 createChatRequest.setType("GROUP");
                 createChatRequest.setName(sender.getUsername() + " Chats automatically");
                 ChatResponse chatResponse = chatsService.createChat(authentication, createChatRequest);
-                chat = chatsService.findChatById(chatResponse.getId());
+                chat = chatsCache.findChatById(chatResponse.getId());
             }
         }
         Messages message = Messages.builder()

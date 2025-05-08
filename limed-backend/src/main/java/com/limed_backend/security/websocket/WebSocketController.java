@@ -24,7 +24,7 @@ public class WebSocketController {
     private final ConnectionService connectionService;
     private final SimpMessagingTemplate simpMessagingTemplate;
     private final MessagesService messagesService;
-    private final ChatsService chatsService;
+    private final ChatsCacheService chatsCache;
     private final UserCacheService userCache;
     private final ContactsService contactsService;
 
@@ -55,7 +55,7 @@ public class WebSocketController {
         String destination = "/ws/chat/" + request.getChatId();
         simpMessagingTemplate.convertAndSend(destination, event);
 
-        Chats chat = chatsService.findChatById(request.getChatId());
+        Chats chat = chatsCache.findChatById(request.getChatId());
         connectionService.checkUnreadMessagesForChat(chat);
     }
 

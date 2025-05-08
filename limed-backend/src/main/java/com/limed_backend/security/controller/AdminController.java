@@ -1,7 +1,8 @@
 package com.limed_backend.security.controller;
 
 import com.limed_backend.security.dto.Requests.*;
-import com.limed_backend.security.dto.Responses.ChatResponse;
+import com.limed_backend.security.dto.Requests.RenameChatRequest;
+import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.User;
@@ -81,9 +82,9 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
-    @GetMapping("/chats")
-    public List<ChatResponse> getAllChats(Authentication authentication){
-        return chatsService.findAllChats(authentication);
+    @GetMapping("/chats/user={id}")
+    public List<ChatResponse> getAllChats(Authentication authentication, @PathVariable Long id){
+        return chatsService.findAllChatsUserForAdmin(id, authentication);
     }
 
     @PostMapping("/chats/activate/{id}")

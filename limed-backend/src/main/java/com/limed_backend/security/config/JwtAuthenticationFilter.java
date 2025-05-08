@@ -44,35 +44,56 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                     @NonNull HttpServletResponse response,
                                     @NonNull FilterChain filterChain)
             throws ServletException, IOException {
-        // Если запрос идёт на энд-поинт обновления токена, пропускаем проверку
-        if ("/token/refresh".equals(request.getServletPath()) ||
-                "/logout".equals(request.getServletPath())) {
+        String requestPath = request.getServletPath();
+        String jwt = jwtCore.getJwtFromHeader(request);
+
+        if ("/logout".equals(requestPath)) {
             filterChain.doFilter(request, response);
             return;
         }
 
-        String jwt = jwtCore.getJwtFromHeader(request);
-
-        if (StringUtils.hasText(jwt) && jwtCore.validateToken(jwt, null)) {
-
-            String jti = jwtCore.getJti(jwt);
-            Token tokenRecord = tokenCache.getTokenByJti(jti);
-            if (tokenRecord == null || tokenRecord.getRevoked() || tokenRecord.getExpiration().before(new Date())) {
-                response.setStatus(HttpServletResponse.SC_FORBIDDEN);
-                response.getWriter().write("Token is revoked or invalid.");
-                return;
-            }
-            String username = jwtCore.getUsernameFromToken(jwt);
-            UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
-
-            UsernamePasswordAuthenticationToken authentication =
-                    new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-
-            authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+        if (!StringUtils.hasText(jwt)) {
+            filterChain.doFilter(request, response);
+            return;
         }
+
+        boolean isRefreshEndpoint = "/token/refresh".equals(requestPath);
+        boolean valid;
+
+        if (isRefreshEndpoint) {
+
+            valid = jwtCore.validateTokenIgnoringExpiration(jwt);
+        } else {
+            valid = jwtCore.validateToken(jwt, null);
+        }
+
+        if (!valid) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().write("Token is invalid according to validations.");
+            return;
+        }
+
+        String jti = jwtCore.getJti(jwt);
+        Token tokenRecord = tokenCache.getTokenByJti(jti);
+        if (tokenRecord == null || tokenRecord.getRevoked() ||
+                (!isRefreshEndpoint && tokenRecord.getExpiration().before(new Date()))) {
+            response.setStatus(HttpServletResponse.SC_FORBIDDEN);
+            response.getWriter().write("Token is revoked or invalid.");
+            return;
+        }
+
+        String username = jwtCore.getUsernameFromToken(jwt);
+        UserDetails userDetails = customUserDetailsService.loadUserByUsername(username);
+
+
+        UsernamePasswordAuthenticationToken authentication =
+                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+        authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+
         filterChain.doFilter(request, response);
     }
+
 
 
 }
