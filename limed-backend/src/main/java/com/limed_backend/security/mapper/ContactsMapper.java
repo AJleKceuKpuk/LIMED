@@ -1,7 +1,7 @@
 package com.limed_backend.security.mapper;
 
-import com.limed_backend.security.dto.Responses.Contact.FriendResponse;
-import com.limed_backend.security.dto.Responses.Contact.NoFriendResponse;
+import com.limed_backend.security.dto.Contact.FriendResponse;
+import com.limed_backend.security.dto.Contact.NoFriendResponse;
 import com.limed_backend.security.entity.Contacts;
 import com.limed_backend.security.entity.User;
 import org.mapstruct.Mapper;

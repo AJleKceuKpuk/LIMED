@@ -1,8 +1,8 @@
 package com.limed_backend.security.controller;
 
 import com.limed_backend.security.dto.Requests.*;
-import com.limed_backend.security.dto.Requests.RenameChatRequest;
-import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
+import com.limed_backend.security.dto.Chat.RenameChatRequest;
+import com.limed_backend.security.dto.Chat.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.dto.Responses.UserResponse;
 import com.limed_backend.security.entity.User;
@@ -68,16 +68,17 @@ public class AdminController {
         return ResponseEntity.ok(result);
     }
 
+
     @PostMapping("/give-sanction")
     public ResponseEntity<String> giveSanction(@RequestBody GiveSanctionRequest request,
-                                            Authentication authentication){
+                                               Authentication authentication){
         String result = sanctionService.giveSanction(request, authentication);
         return ResponseEntity.ok(result);
     }
 
     @PostMapping("/unsanctioned")
     public ResponseEntity<String> unsanctioned(@RequestBody UnsanctionedRequest request,
-                                          Authentication authentication){
+                                               Authentication authentication){
         String result = sanctionService.unsanctioned(request, authentication);
         return ResponseEntity.ok(result);
     }

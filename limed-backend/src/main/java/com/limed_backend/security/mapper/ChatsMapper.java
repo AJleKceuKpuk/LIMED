@@ -1,6 +1,6 @@
 package com.limed_backend.security.mapper;
 
-import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
+import com.limed_backend.security.dto.Chat.ChatResponse;
 import com.limed_backend.security.entity.Chats;
 import org.mapstruct.Mapper;
 import org.mapstruct.Named;

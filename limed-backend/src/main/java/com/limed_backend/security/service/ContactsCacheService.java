@@ -67,6 +67,16 @@ public class ContactsCacheService {
     public void removeContactsFromCache(User user, Contacts contact, String typeCache) {
         Cache cache = cacheManager.getCache(typeCache);
         List<Contacts> contacts = getListContactsFromCache(cache, user);
+        if (contacts.isEmpty()) {
+            System.out.println("Contacts empty -> find all " + typeCache);
+            contacts = switch (typeCache) {
+                case "contacts" -> findAllAccept(user.getId());
+                case "contacts-ignore" -> findAllIgnore(user.getId());
+                case "contacts-pending" -> findAllPending(user.getId());
+                case "contacts-invite" -> findAllInvite(user.getId());
+                default -> new ArrayList<>();
+            };
+        }
         contacts.removeIf(c -> c.getId().equals(contact.getId()));
         cache.put(user.getId(), contacts);
     }

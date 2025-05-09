@@ -1,9 +1,9 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Requests.CreateChatRequest;
-import com.limed_backend.security.dto.Requests.RenameChatRequest;
-import com.limed_backend.security.dto.Requests.UsersChatRequest;
-import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
+import com.limed_backend.security.dto.Chat.CreateChatRequest;
+import com.limed_backend.security.dto.Chat.RenameChatRequest;
+import com.limed_backend.security.dto.Chat.UsersChatRequest;
+import com.limed_backend.security.dto.Chat.ChatResponse;
 import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
@@ -14,7 +14,6 @@ import com.limed_backend.security.repository.ChatsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;

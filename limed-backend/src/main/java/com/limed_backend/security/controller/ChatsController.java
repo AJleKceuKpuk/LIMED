@@ -1,10 +1,10 @@
 package com.limed_backend.security.controller;
 
-import com.limed_backend.security.dto.Requests.CreateChatRequest;
+import com.limed_backend.security.dto.Chat.CreateChatRequest;
 import com.limed_backend.security.dto.Requests.MessageRequest;
-import com.limed_backend.security.dto.Requests.RenameChatRequest;
-import com.limed_backend.security.dto.Requests.UsersChatRequest;
-import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
+import com.limed_backend.security.dto.Chat.RenameChatRequest;
+import com.limed_backend.security.dto.Chat.UsersChatRequest;
+import com.limed_backend.security.dto.Chat.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ChatsService;

@@ -76,7 +76,7 @@
                     // остальные настройки...
                     .authorizeHttpRequests(authorize -> authorize
                             .requestMatchers(org.springframework.http.HttpMethod.OPTIONS, "/**").permitAll()
-                            .requestMatchers( "/ws/**", "/start", "/login", "/registration",  "/logout").permitAll()
+                            .requestMatchers( "/ws/**", "/start", "/login", "/registration",  "/logout", "/sanction", "/sanction/**").permitAll()
                             .requestMatchers("/game", "/user/**", "/chats/**", "/token/**").hasAnyRole("USER", "ADMIN")
                             .requestMatchers("/admin", "/admin/**").hasRole("ADMIN")
                             .anyRequest().authenticated()

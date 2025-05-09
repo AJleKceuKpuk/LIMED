@@ -2,31 +2,52 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Requests.GiveSanctionRequest;
 import com.limed_backend.security.dto.Requests.UnsanctionedRequest;
+import com.limed_backend.security.dto.Sanction.ActiveSanctionResponse;
+import com.limed_backend.security.dto.Sanction.InactiveSanctionResponse;
+import com.limed_backend.security.entity.Contacts;
 import com.limed_backend.security.entity.Sanction;
 import com.limed_backend.security.entity.User;
+import com.limed_backend.security.mapper.SanctionsMapper;
 import com.limed_backend.security.repository.SanctionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class SanctionService {
 
     private final SanctionRepository sanctionRepository;
-    private final CacheManager cacheManager;
     private final UserCacheService userCache;
     private final SanctionCacheService sanctionCache;
+    private final SanctionsMapper sanctionsMapper;
 
-    // выдать блокировку пользователя
+    public List<ActiveSanctionResponse> getAllActiveSanctions(int page){
+        Page<Sanction> sanctions = sanctionCache.findAllActiveSanctions(page);
+        return sanctions.stream()
+                .map(sanctionsMapper::toActiveSanctionResponse)
+                .toList();
+    }
+
+    public List<InactiveSanctionResponse> getAllInactiveSanctions(int page){
+        Page<Sanction> sanctions = sanctionCache.findAllActiveSanctions(page);
+        return sanctions.stream()
+                .map(sanctionsMapper::toInactiveSanctionResponse)
+                .toList();
+    }
+
+    // выдать блокировку пользователю
+    @Transactional
     public String giveSanction(GiveSanctionRequest request, Authentication authentication) {
         User admin = userCache.findUserByUsername(authentication.getName());
         User user = userCache.findUserByUsername(request.getUsername());
@@ -44,6 +65,7 @@ public class SanctionService {
                 .sanctionedBy(admin)
                 .build();
         sanctionRepository.save(sanction);
+        sanctionCache.addSanctionToCache(user, sanction);
         return "Пользователь " + user.getUsername() + " заблокирован до " + endTime;
     }
 
@@ -61,10 +83,9 @@ public class SanctionService {
         activeSanctions.forEach(sanction -> {
             sanction.setRevokedSanction(true);
             sanction.setRevokedBy(admin);
-            sanctionCache.deleteSanctionCache(user);
+            sanctionCache.removeSanctionFromCache(user, sanction);
         });
         sanctionRepository.saveAll(activeSanctions);
-
         return "Пользователь " + user.getUsername() + " разблокирован для типа " + request.getSanctionType();
     }
 }

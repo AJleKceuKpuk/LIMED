@@ -2,8 +2,8 @@ package com.limed_backend.security.websocket;
 
 import com.limed_backend.security.dto.Requests.MessageRequest;
 import com.limed_backend.security.dto.Requests.UserStatusRequest;
-import com.limed_backend.security.dto.Responses.ChatEvent;
-import com.limed_backend.security.dto.Responses.Contact.FriendResponse;
+import com.limed_backend.security.dto.Chat.ChatEvent;
+import com.limed_backend.security.dto.Contact.FriendResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;

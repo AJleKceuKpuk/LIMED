@@ -1,6 +1,7 @@
 package com.limed_backend.security.dto.Responses;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.limed_backend.security.dto.Sanction.ActiveSanctionResponse;
 import lombok.Data;
 
 import java.io.Serial;
@@ -21,5 +22,5 @@ public class UserResponse implements Serializable {
     private LocalDateTime lastActivity;
     private LocalDate dateRegistration;
     private List<String> roles;
-    private List<SanctionResponse> sanctions;
+    private List<ActiveSanctionResponse> sanctions;
 }

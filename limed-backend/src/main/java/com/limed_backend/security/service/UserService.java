@@ -2,7 +2,7 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Requests.*;
 import com.limed_backend.security.dto.Responses.TokenResponse;
-import com.limed_backend.security.dto.Responses.User.UserProfileResponse;
+import com.limed_backend.security.dto.User.UserProfileResponse;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.EmailAlreadyExistsException;
@@ -20,6 +20,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -34,11 +35,15 @@ public class UserService {
     //получение профиля пользователя
     public UserProfileResponse getProfile(Authentication authentication) {
         User user = userCache.findUserByUsername(authentication.getName());
+
         return new UserProfileResponse(
                 user.getId(),
                 user.getUsername(),
                 user.getEmail(),
-                user.getDateRegistration()
+                user.getDateRegistration(),
+                user.getRoles().stream()
+                        .map(Role::getName)
+                        .toList()
         );
     }
 

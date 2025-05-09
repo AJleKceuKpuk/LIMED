@@ -1,8 +1,8 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Requests.CreateChatRequest;
+import com.limed_backend.security.dto.Chat.CreateChatRequest;
 import com.limed_backend.security.dto.Requests.MessageRequest;
-import com.limed_backend.security.dto.Responses.Chat.ChatResponse;
+import com.limed_backend.security.dto.Chat.ChatResponse;
 import com.limed_backend.security.dto.Responses.MessageResponse;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.Messages;

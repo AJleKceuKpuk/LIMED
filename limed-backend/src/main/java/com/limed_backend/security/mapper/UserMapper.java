@@ -12,11 +12,12 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-@Mapper(componentModel = "spring", uses = {SanctionMapper.class})
+@Mapper(componentModel = "spring", uses = {SanctionsMapper.class})
 public interface UserMapper {
 
     @Mapping(target = "roles", source = "roles", qualifiedByName = "mapRoles")
-    @Mapping(target = "sanctions", source = "sanctions")
+    // Если санкции – всегда активные, можно указать конкретное преобразование:
+    @Mapping(target = "sanctions", source = "sanctions", qualifiedByName = "toActiveSanctionResponse")
     UserResponse toUserResponse(User user);
 
     @Named("mapRoles")
@@ -27,5 +28,10 @@ public interface UserMapper {
         return roles.stream()
                 .map(Role::getName)
                 .collect(Collectors.toList());
+    }
+
+    // Метод для преобразования User в String
+    default String map(User user) {
+        return user != null ? user.getUsername() : null;
     }
 }
