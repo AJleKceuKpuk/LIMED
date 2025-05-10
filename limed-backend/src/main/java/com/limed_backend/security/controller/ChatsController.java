@@ -1,11 +1,8 @@
 package com.limed_backend.security.controller;
 
-import com.limed_backend.security.dto.Chat.CreateChatRequest;
-import com.limed_backend.security.dto.Requests.MessageRequest;
-import com.limed_backend.security.dto.Chat.RenameChatRequest;
-import com.limed_backend.security.dto.Chat.UsersChatRequest;
-import com.limed_backend.security.dto.Chat.ChatResponse;
-import com.limed_backend.security.dto.Responses.MessageResponse;
+import com.limed_backend.security.dto.Chat.*;
+import com.limed_backend.security.dto.Message.MessageRequest;
+import com.limed_backend.security.dto.Message.MessageResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ChatsService;
 import com.limed_backend.security.service.MessagesService;
@@ -26,14 +23,28 @@ import java.util.List;
 public class ChatsController {
 
     private final ChatsService chatsService;
-    private final MessagesService messagesService;
-    private final UserService userService;
-    private final UserCacheService userCache;
 
-    @GetMapping("/all")
-    public ResponseEntity<List<ChatResponse>> getChats(Authentication authentication){
-        return ResponseEntity.ok(chatsService.findAllChatsUser(authentication));
+
+    //Все чаты пользователя
+    @GetMapping
+    public ResponseEntity<List<ChatResponse>> getAllChatByUser(Authentication authentication){
+        List<ChatResponse> chats = chatsService.findAllChatsUser(authentication);
+        return ResponseEntity.ok(chats);
     }
+
+    //общий чат
+    @GetMapping("/all")
+    public ResponseEntity<AllChatResponse> getChats(){
+        return ResponseEntity.ok(chatsService.findAllChat());
+    }
+
+    //чат по id
+    @GetMapping("/chat={id}")
+    public ResponseEntity<ChatResponse> getChatById(Authentication authentication, @PathVariable Long id){
+        ChatResponse chat = chatsService.findChatById(id, authentication);
+        return ResponseEntity.ok(chat);
+    }
+
 
     @PostMapping("/create")
     public ResponseEntity<ChatResponse> createChat(Authentication authentication,
@@ -70,45 +81,12 @@ public class ChatsController {
         return ResponseEntity.ok(chat);
     }
 
-
-
-    @GetMapping("/{chatId}/messages")
-    public ResponseEntity<Page<MessageResponse>> getChatMessages(
-            Authentication authentication,
-            @PathVariable Long chatId,
-            @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
-
-        Page<MessageResponse> messages = messagesService.findMessagesFromChat(authentication, chatId, size, page);
-
-        return ResponseEntity.ok(messages);
+    @PostMapping("/leave-chat/{id}")
+    public ResponseEntity<String> leaveFromChat(Authentication authentication,
+                                                @PathVariable Long id){
+        String result = chatsService.leaveChat(authentication, id);
+        return ResponseEntity.ok(result);
     }
 
-    @PostMapping("/create-message")
-    public ResponseEntity<MessageResponse> createMessage(Authentication authentication,
-                                         @RequestBody MessageRequest request){
-        MessageResponse message = messagesService.createMessage(authentication, request);
-        return ResponseEntity.ok(message);
-    }
 
-    @PostMapping("/edit-message")
-    public ResponseEntity<MessageResponse> editMessage(Authentication authentication,
-                                                       @RequestBody MessageRequest request) {
-        MessageResponse message = messagesService.editMessage(authentication, request);
-        return ResponseEntity.ok(message);
-    }
-
-    @PostMapping("/delete-message")
-    public ResponseEntity<String> deleteMessage(Authentication authentication,
-                                                       @RequestBody MessageRequest request) {
-        String message = messagesService.deleteMessage(authentication, request);
-        return ResponseEntity.ok(message);
-    }
-
-    @GetMapping("/unread")
-    public ResponseEntity<Long> unreadMessages(Authentication authentication){
-        User user = userCache.findUserByUsername(authentication.getName());
-        Long unreadCount = messagesService.countUnreadMessages(user);
-        return ResponseEntity.ok(unreadCount);
-    }
 }

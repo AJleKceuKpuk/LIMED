@@ -32,7 +32,7 @@ public class DataInitializerUser implements CommandLineRunner {
         roles.add(adminRole);
         if (userRepository.count() == 0) {
             User user = User.builder()
-                    .username("ADMIN")
+                    .username("Admin")
                     .email("admin@limed.by")
                     .password(passwordEncoder.encode("123"))
                     .roles(roles)

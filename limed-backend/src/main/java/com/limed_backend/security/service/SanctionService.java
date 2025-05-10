@@ -1,19 +1,15 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Requests.GiveSanctionRequest;
-import com.limed_backend.security.dto.Requests.UnsanctionedRequest;
+import com.limed_backend.security.dto.Sanction.CreateSanctionRequest;
+import com.limed_backend.security.dto.Sanction.DeleteSanctionRequest;
 import com.limed_backend.security.dto.Sanction.ActiveSanctionResponse;
 import com.limed_backend.security.dto.Sanction.InactiveSanctionResponse;
-import com.limed_backend.security.entity.Contacts;
 import com.limed_backend.security.entity.Sanction;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.mapper.SanctionsMapper;
 import com.limed_backend.security.repository.SanctionRepository;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.Cache;
-import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
@@ -21,7 +17,6 @@ import org.springframework.stereotype.Service;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -48,7 +43,7 @@ public class SanctionService {
 
     // выдать блокировку пользователю
     @Transactional
-    public String giveSanction(GiveSanctionRequest request, Authentication authentication) {
+    public String giveSanction(CreateSanctionRequest request, Authentication authentication) {
         User admin = userCache.findUserByUsername(authentication.getName());
         User user = userCache.findUserByUsername(request.getUsername());
 
@@ -71,7 +66,7 @@ public class SanctionService {
 
     // снять блокировку пользователя
     @Transactional
-    public String unsanctioned(UnsanctionedRequest request, Authentication authentication) {
+    public String unsanctioned(DeleteSanctionRequest request, Authentication authentication) {
         User user = userCache.findUserByUsername(request.getUsername());
         User admin = userCache.findUserByUsername(authentication.getName());
         List<Sanction> activeSanctions = sanctionRepository.findActiveSanctions(user, request.getSanctionType());

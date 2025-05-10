@@ -43,9 +43,9 @@ public class Chats implements Serializable {
     //ОТНОШЕНИЯ
 
     @OneToMany(mappedBy = "chat",
-            cascade = {CascadeType.DETACH, CascadeType.REFRESH, CascadeType.REMOVE},
+            cascade = CascadeType.ALL,
             orphanRemoval = true,
-            fetch = FetchType.LAZY)
+            fetch = FetchType.EAGER)
     @Builder.Default
     private List<ChatUser> chatUsers = new ArrayList<>();
 
@@ -55,6 +55,9 @@ public class Chats implements Serializable {
             fetch = FetchType.LAZY)
     @Builder.Default
     private List<Messages> messages = new ArrayList<>();
+
+
+
 
     @Override
     public boolean equals(Object o) {

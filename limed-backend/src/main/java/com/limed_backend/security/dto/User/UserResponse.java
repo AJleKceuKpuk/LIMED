@@ -1,4 +1,4 @@
-package com.limed_backend.security.dto.Responses;
+package com.limed_backend.security.dto.User;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.limed_backend.security.dto.Sanction.ActiveSanctionResponse;

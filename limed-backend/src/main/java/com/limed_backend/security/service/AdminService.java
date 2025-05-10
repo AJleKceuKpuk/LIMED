@@ -1,6 +1,8 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Requests.*;
+import com.limed_backend.security.dto.User.UpdateEmailRequest;
+import com.limed_backend.security.dto.User.UpdateRoleRequest;
+import com.limed_backend.security.dto.User.UpdateUsernameRequest;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;

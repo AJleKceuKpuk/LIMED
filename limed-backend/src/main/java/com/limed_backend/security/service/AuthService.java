@@ -1,8 +1,8 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Requests.LoginRequest;
-import com.limed_backend.security.dto.Requests.RegistrationRequest;
-import com.limed_backend.security.dto.Responses.TokenResponse;
+import com.limed_backend.security.dto.Auth.LoginRequest;
+import com.limed_backend.security.dto.Auth.RegistrationRequest;
+import com.limed_backend.security.dto.Token.TokenResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.*;
 import com.limed_backend.security.config.JwtCore;

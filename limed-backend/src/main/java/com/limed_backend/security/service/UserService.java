@@ -1,7 +1,10 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Requests.*;
-import com.limed_backend.security.dto.Responses.TokenResponse;
+import com.limed_backend.security.dto.Auth.RegistrationRequest;
+import com.limed_backend.security.dto.Token.TokenResponse;
+import com.limed_backend.security.dto.User.UpdateEmailRequest;
+import com.limed_backend.security.dto.User.UpdatePasswordRequest;
+import com.limed_backend.security.dto.User.UpdateUsernameRequest;
 import com.limed_backend.security.dto.User.UserProfileResponse;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
@@ -20,7 +23,6 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.Collections;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor

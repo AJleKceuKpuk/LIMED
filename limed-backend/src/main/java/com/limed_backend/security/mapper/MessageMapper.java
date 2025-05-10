@@ -1,6 +1,6 @@
 package com.limed_backend.security.mapper;
 
-import com.limed_backend.security.dto.Responses.MessageResponse;
+import com.limed_backend.security.dto.Message.MessageResponse;
 import com.limed_backend.security.entity.Messages;
 import com.limed_backend.security.entity.User;
 import org.mapstruct.Mapper;

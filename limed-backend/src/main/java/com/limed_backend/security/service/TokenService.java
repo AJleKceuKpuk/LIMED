@@ -1,7 +1,7 @@
 package com.limed_backend.security.service;
 
 import com.limed_backend.security.config.JwtCore;
-import com.limed_backend.security.dto.Responses.TokenResponse;
+import com.limed_backend.security.dto.Token.TokenResponse;
 import com.limed_backend.security.entity.Token;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.repository.TokenRepository;
@@ -15,8 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

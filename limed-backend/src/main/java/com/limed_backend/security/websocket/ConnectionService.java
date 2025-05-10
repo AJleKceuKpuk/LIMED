@@ -1,6 +1,6 @@
 package com.limed_backend.security.websocket;
 
-import com.limed_backend.security.dto.Requests.UserStatusRequest;
+import com.limed_backend.security.dto.User.UpdateUserStatusRequest;
 import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
@@ -53,7 +53,7 @@ public class ConnectionService {
                         .atZone(java.time.ZoneId.systemDefault())
                         .toLocalDateTime();
                 userService.updateLastActivity(userId, recordedLastActivity);
-                UserStatusRequest statusUpdate = new UserStatusRequest(userId, "away");
+                UpdateUserStatusRequest statusUpdate = new UpdateUserStatusRequest(userId, "away");
                 messagingTemplate.convertAndSend("/ws/online/" + user.getUsername() , statusUpdate); //возврат ответа клиенту
                 System.out.println("User " + userId + " inactive for "
                         + (currentTime - lastActivityMillis) + " ms. Status set to AWAY.");

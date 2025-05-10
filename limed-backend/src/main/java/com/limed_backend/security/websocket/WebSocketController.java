@@ -1,10 +1,10 @@
 package com.limed_backend.security.websocket;
 
-import com.limed_backend.security.dto.Requests.MessageRequest;
-import com.limed_backend.security.dto.Requests.UserStatusRequest;
+import com.limed_backend.security.dto.Message.MessageRequest;
+import com.limed_backend.security.dto.User.UpdateUserStatusRequest;
 import com.limed_backend.security.dto.Chat.ChatEvent;
 import com.limed_backend.security.dto.Contact.FriendResponse;
-import com.limed_backend.security.dto.Responses.MessageResponse;
+import com.limed_backend.security.dto.Message.MessageResponse;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.*;
@@ -31,13 +31,13 @@ public class WebSocketController {
 
     // Клиент отправляет обновление статуса на адрес /ws/online/update
     @MessageMapping("/online/update")
-    public void updateUserStatus(UserStatusRequest message) {
+    public void updateUserStatus(UpdateUserStatusRequest message) {
         User user = userCache.findUserById(message.getUserId());
         connectionService.updateLastUserActivity(message.getUserId());
         userService.updateUserStatus(message.getUserId(), message.getStatus());
 
         List<FriendResponse> allContacts = contactsService.findAcceptContacts(user);
-        UserStatusRequest update = new UserStatusRequest(message.getUserId(), message.getStatus());
+        UpdateUserStatusRequest update = new UpdateUserStatusRequest(message.getUserId(), message.getStatus());
         simpMessagingTemplate.convertAndSend("/ws/online/" + user.getUsername(), update);
         for (FriendResponse friend : allContacts) {
             String destination = "/ws/online/" + friend.getUsername();

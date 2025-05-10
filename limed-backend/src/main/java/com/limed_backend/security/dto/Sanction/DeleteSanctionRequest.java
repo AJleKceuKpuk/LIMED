@@ -1,9 +1,9 @@
-package com.limed_backend.security.dto.Requests;
+package com.limed_backend.security.dto.Sanction;
 
 import lombok.Data;
 
 @Data
-public class UnsanctionedRequest {
+public class DeleteSanctionRequest {
     private String sanctionType;
     private String username;
 }

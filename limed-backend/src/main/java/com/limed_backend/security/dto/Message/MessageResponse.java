@@ -1,4 +1,4 @@
-package com.limed_backend.security.dto.Responses;
+package com.limed_backend.security.dto.Message;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import lombok.Data;

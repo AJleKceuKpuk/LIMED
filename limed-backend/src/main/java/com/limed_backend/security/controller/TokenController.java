@@ -1,6 +1,6 @@
 package com.limed_backend.security.controller;
 
-import com.limed_backend.security.dto.Responses.TokenResponse;
+import com.limed_backend.security.dto.Token.TokenResponse;
 import com.limed_backend.security.service.TokenService;
 import io.jsonwebtoken.JwtException;
 import jakarta.servlet.http.HttpServletRequest;

@@ -1,9 +1,6 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Chat.CreateChatRequest;
-import com.limed_backend.security.dto.Chat.RenameChatRequest;
-import com.limed_backend.security.dto.Chat.UsersChatRequest;
-import com.limed_backend.security.dto.Chat.ChatResponse;
+import com.limed_backend.security.dto.Chat.*;
 import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
@@ -14,7 +11,7 @@ import com.limed_backend.security.repository.ChatsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.CacheManager;
+import org.hibernate.Hibernate;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -30,28 +27,32 @@ public class ChatsService {
     private final ContactsService contactsService;
     private final ChatsMapper chatsMapper;
     private final ChatUserRepository chatUserRepository;
-    private final CacheManager cacheManager;
     private final EntityManager entityManager;
     private final UserCacheService userCache;
     private final ChatsCacheService chatsCache;
 
     //==========================СПИСКИ ЧАТОВ===========================//
 
+    //Общий чат
+    public AllChatResponse findAllChat(){
+        Chats allChat = chatsCache.findAllChat();
+        return new AllChatResponse(allChat.getId(),
+                allChat.getName(),
+                allChat.getType());
+    }
+
     //Для информации о чате в шапке чата, доступно лишь пользователем чата!
     public ChatResponse findChatById(Long id, Authentication authentication){
         Chats chat = chatsCache.findChatById(id);
         User user = userCache.findUserByUsername(authentication.getName());
-        boolean isMember = chat.getChatUsers()
-                .stream()
-                .anyMatch(chatUser -> chatUser.getUser().getId().equals(user.getId()));
+
         boolean isAdmin = userService.isAdmin(user);
-        if (isMember || isAdmin){
+        if (isMember(chat, user) || isAdmin){
             return chatsMapper.toChatResponse(chat);
         }else {
             return null;
         }
     }
-
     //Выдать все чаты текущего пользователя
     public List<ChatResponse> findAllChatsUser(Authentication authentication) {
         List<Chats> activeChats = chatsCache.getAllChatsUser(authentication);
@@ -60,6 +61,12 @@ public class ChatsService {
                 .collect(Collectors.toList());
     }
 
+    // Поиск приватного чата между пользователями
+    public Chats findPrivateChat(List<Long> usersId) {
+        return chatRepository.findPrivateChat(usersId, 2L).orElse(null);
+    }
+
+    //TODO Вернуться когда буду делать админку
     // Показать список чатов пользователя для Администратора!
     public List<ChatResponse> findAllChatsUserForAdmin(Long userId, Authentication authentication) {
         User admin = userCache.findUserByUsername(authentication.getName());
@@ -72,24 +79,6 @@ public class ChatsService {
         return null;
     }
 
-    //Поиск приватного чата между пользователями
-    public Chats findPrivateChat(List<Long> usersId) {
-        Set<Long> requestedUserIds = new HashSet<>(usersId);
-        List<Chats> privateChats = chatRepository.findByType("PRIVATE");
-
-        Optional<Chats> privateChat = privateChats.stream()
-                .filter(chat -> {
-                    Set<Long> chatUserIds = chat.getChatUsers()
-                            .stream()
-                            .map(chatUser -> chatUser.getUser().getId())
-                            .collect(Collectors.toSet());
-                    return chatUserIds.equals(requestedUserIds);
-                })
-                .findFirst();
-        return privateChat.orElse(null);
-    }
-
-
     //========================УПРАВЛЕНИЕ ЧАТАМИ=============================//
 
     //создание чата
@@ -97,6 +86,7 @@ public class ChatsService {
     public ChatResponse createChat(Authentication authentication, CreateChatRequest request) {
         User creator = userCache.findUserByUsername(authentication.getName());
         String type = request.getType();
+        String name = request.getName();
         Set<Long> usersId = new HashSet<>();
         if (request.getUsersId() != null) {
             usersId.addAll(request.getUsersId());
@@ -107,6 +97,10 @@ public class ChatsService {
         for (Long userId : usersId) {
             User user = userCache.findUserById(userId);
             if (type.equals("PRIVATE")) {
+                Chats existingChat = findPrivateChat(usersId.stream().toList());
+                if (existingChat != null) {
+                    return chatsMapper.toChatResponse(existingChat);
+                }
                 if (!userId.equals(creator.getId()) &&
                         contactsService.findDirectStatus(userId, creator.getId(), "Ignore").isEmpty()) {
                     users.add(user);
@@ -114,26 +108,27 @@ public class ChatsService {
                     users.add(user);
                 }
             } else if (type.equals("GROUP")){
+                if (name == null || name.isEmpty()){
+                    name = creator.getUsername() + " chat";
+                }
                 if (contactsService.findDirectStatus(userId, creator.getId(), "Ignore").isEmpty() &&
                         (userId.equals(creator.getId()) || contactsService.isAcceptedContacts(creator.getId(), userId))) {
                     users.add(user);
                 }
             }
         }
-
         Chats chat = Chats.builder()
-                .name(request.getName())
+                .name(name)
                 .creatorId(creator.getId())
                 .type(type)
                 .status("Active")
                 .build();
 
         List<ChatUser> chatUsers = new ArrayList<>();
-        // Здесь гарантируем, что для каждого user получаем управляемую сущность
         for (User user : users) {
-            // Если user уже отсоединён, можно переподключить его, например:
             User managedUser = entityManager.find(User.class, user.getId());
             ChatUser chatUser = new ChatUser();
+
             chatUser.setChat(chat);
             chatUser.setUser(managedUser);
             chatUser.setStatus("Active");
@@ -144,19 +139,24 @@ public class ChatsService {
         return chatsMapper.toChatResponse(chat);
     }
 
-
     //изменение названия чата
     public ChatResponse renameChat(Authentication authentication, RenameChatRequest request) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(request.getId());
         checkCreator(currentUser, chat);
+        if (isAllChat(chat)){
+            throw new ResourceNotFoundException("Запрещено изменять общий чат");
+        }
         if ("PRIVATE".equals(chat.getType())){
             throw new ResourceNotFoundException("Изменить название приватного чата невозможно!");
         }
-      //    deleteChatByIdCache(chat); //удаляем кэш по Id чата
+
         chat.setName(request.getNewName());
         Chats updatedChat = chatRepository.save(chat);
-     //   addChatByIdCache(chat); //добавляем в кэш по Id чата
+
+        chatsCache.removeChatToCache(chat);
+        chatsCache.addChatToCache(chat);
+
         return chatsMapper.toChatResponse(updatedChat);
     }
 
@@ -165,29 +165,44 @@ public class ChatsService {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(id);
         checkCreator(currentUser, chat);
+        if (chat.getId() == 1){
+            throw new ResourceNotFoundException("Запрещено изменять общий чат");
+        }
         chat.setStatus("Deleted");
         chatRepository.save(chat);
-     //   deleteChatByIdCache(chat);
+
+        chatsCache.removeChatToCache(chat);
+
         return chatsMapper.toChatResponse(chat);
     }
 
-    //Активировать чат (может только Администратор)
+    //TODO Реализовать когда буду делать админ контроллер
+    // Активировать чат (может только Администратор)
     public ChatResponse activatedChat(Authentication authentication, Long id){
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(id);
-     //   deleteChatByIdCache(chat);
+        if (isAllChat(chat)){
+            throw new ResourceNotFoundException("Запрещено изменять общий чат");
+        }
+        chatsCache.removeChatToCache(chat);
         checkCreator(currentUser, chat);
         chat.setStatus("Active");
         chatRepository.save(chat);
-      //  addChatByIdCache(chat);
         return chatsMapper.toChatResponse(chat);
     }
 
-    //=====================================================//
     // добавление пользователей в чат
+    @Transactional
     public ChatResponse addUsersToChat(Authentication authentication, UsersChatRequest request) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(request.getId());
+        if (isAllChat(chat)){
+            throw new ResourceNotFoundException("Это общий чат");
+        }
+        
+        if (!isMember(chat, currentUser)){
+            throw new ResourceNotFoundException("Вы не являетесь членом группы!");
+        }
 
         if ("PRIVATE".equals(chat.getType())) {
             Set<Long> currentUserIds = chat.getChatUsers().stream()
@@ -211,9 +226,6 @@ public class ChatsService {
             return createChat(authentication, newChatRequest);
         } else if ("GROUP".equals(chat.getType())) {
             List<ChatUser> chatUsers = chat.getChatUsers();
-            if (chatUsers == null) {
-                chatUsers = new ArrayList<>();
-            }
 
             for (Long userId : request.getUsersId()) {
                 boolean exists = chatUsers.stream()
@@ -228,21 +240,24 @@ public class ChatsService {
                     chatUsers.add(newChatUser);
                 }
             }
-           // deleteChatByIdCache(chat);
-            chat.setChatUsers(chatUsers);
 
+            chat.setChatUsers(chatUsers);
             chatRepository.save(chat);
-           // addChatByIdCache(chat);
             return chatsMapper.toChatResponse(chat);
         }
+        chatsCache.removeChatToCache(chat);
+        chatsCache.addChatToCache(chat);
         return null;
     }
 
     // удаление пользователей в чат
+    @Transactional
     public ChatResponse removeUserFromChat(Authentication authentication, UsersChatRequest request) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(request.getId());
-
+        if (isAllChat(chat)){
+            throw new ResourceNotFoundException("Это общий чат");
+        }
         checkCreator(currentUser, chat);
 
         if (request.getUsersId() == null || request.getUsersId().isEmpty()) {
@@ -261,18 +276,23 @@ public class ChatsService {
 
         chatRepository.save(chat);
 
-        //deleteChatByIdCache(chat);
-       // addChatByIdCache(chat);
+        chatsCache.removeChatToCache(chat);
+        chatsCache.addChatToCache(chat);
 
         return chatsMapper.toChatResponse(chat);
     }
 
     //метод выхода из чата
-    public ChatResponse leaveChat(Authentication authentication, Long chatId) {
+    @Transactional
+    public String leaveChat(Authentication authentication, Long chatId) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
-
         Chats chat = chatsCache.findChatById(chatId);
-
+        if (isAllChat(chat)){
+            throw new ResourceNotFoundException("Это общий чат");
+        }
+        if (!isMember(chat, currentUser)){
+            throw new ResourceNotFoundException("Вы не состоите в чате");
+        }
         ChatUser chatUser = chat.getChatUsers()
                 .stream()
                 .filter(cu -> cu.getUser().getId().equals(currentUser.getId()))
@@ -280,14 +300,15 @@ public class ChatsService {
                 .orElseThrow(() -> new ResourceNotFoundException("User is not a member of chat with id " + chatId));
 
         if (chat.getCreatorId().equals(currentUser.getId())) {
-            throw new RuntimeException("Создатель чата не может выйти из чата");
+            throw new ResourceNotFoundException("Создатель чата не может выйти из чата");
         }
-        //deleteChatByIdCache(chat);
+
         chatUser.setStatus("leave");
 
         chatUserRepository.save(chatUser);
-       // addChatByIdCache(chat);
-        return chatsMapper.toChatResponse(chat);
+        chatsCache.removeChatToCache(chat);
+        chatsCache.addChatToCache(chat);
+        return "Вы успешно вышли из чата!";
     }
 
 
@@ -295,8 +316,12 @@ public class ChatsService {
     //общая проверка
     private void checkCreator(User currentUser, Chats chat) {
         if (!isCreator(currentUser, chat) && !userService.isAdmin(currentUser)) {
-            throw new RuntimeException("Только создатель чата или администратор могут выполнять эту операцию");
+            throw new ResourceNotFoundException("Только создатель чата или администратор могут выполнять эту операцию");
         }
+    }
+
+    private boolean isAllChat(Chats chat){
+        return chat.getId() == 1;
     }
 
     //проверка, что пользователь - создатель чата
@@ -304,5 +329,10 @@ public class ChatsService {
         return chat.getCreatorId().equals(user.getId());
     }
 
+    public boolean isMember(Chats chat, User user){
+        return chat.getChatUsers()
+                .stream()
+                .anyMatch(chatUser -> chatUser.getUser().getId().equals(user.getId()));
+    }
 
 }

@@ -1,4 +1,4 @@
-package com.limed_backend.security.dto.Responses;
+package com.limed_backend.security.dto.Token;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

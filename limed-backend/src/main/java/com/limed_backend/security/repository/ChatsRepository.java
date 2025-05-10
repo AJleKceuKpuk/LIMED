@@ -12,17 +12,26 @@ import java.util.Optional;
 @Repository
 public interface ChatsRepository extends JpaRepository<Chats, Long> {
 
-        //поиск чатов по типу
-        List<Chats> findByType(String type);
+        @Query("SELECT c FROM Chats c LEFT JOIN FETCH c.chatUsers WHERE c.id = :id")
+        Optional<Chats> findChatById(@Param("id") Long id);
 
-        //поиск чатов по пользователю и статусу
+        @Query("SELECT c FROM Chats c " +
+                "JOIN c.chatUsers cu " +
+                "WHERE c.type = 'PRIVATE' " +
+                "AND cu.user.id IN :userIds " +
+                "GROUP BY c.id " +
+                "HAVING COUNT(DISTINCT cu.user.id) = :size")
+        Optional<Chats> findPrivateChat(@Param("userIds") List<Long> userIds, @Param("size") Long size);
+
+
         @Query(value = "SELECT DISTINCT c.* " +
                 "FROM chats c " +
                 "INNER JOIN chat_users cu ON c.id = cu.chat_id " +
                 "WHERE cu.user_id = :userId " +
-                "  AND cu.status = :status", nativeQuery = true)
-        Optional<List<Chats>> findChatsByUserAndStatus(@Param("userId") Long userId,
-                                                      @Param("status") String status);
+                "  AND c.status = 'Active' " +
+                "  AND cu.status = 'Active'", nativeQuery = true)
+        Optional<List<Chats>> findActiveChatsByUser(@Param("userId") Long userId);
+
 
         //поиск чатов по пользователю
         @Query(value = "SELECT DISTINCT c.* " +
