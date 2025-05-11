@@ -1,17 +1,19 @@
 package com.limed_backend.security.service;
 
 import com.limed_backend.security.dto.Chat.*;
+import com.limed_backend.security.dto.Chat.CreateChatEvent;
 import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.mapper.ChatsMapper;
+import com.limed_backend.security.entity.enums.ChatEventType;
 import com.limed_backend.security.repository.ChatUserRepository;
 import com.limed_backend.security.repository.ChatsRepository;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import org.hibernate.Hibernate;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
@@ -30,6 +32,8 @@ public class ChatsService {
     private final EntityManager entityManager;
     private final UserCacheService userCache;
     private final ChatsCacheService chatsCache;
+    //private final MessagesService messagesService;
+    private final ApplicationEventPublisher eventPublisher;
 
     //==========================СПИСКИ ЧАТОВ===========================//
 
@@ -45,7 +49,6 @@ public class ChatsService {
     public ChatResponse findChatById(Long id, Authentication authentication){
         Chats chat = chatsCache.findChatById(id);
         User user = userCache.findUserByUsername(authentication.getName());
-
         boolean isAdmin = userService.isAdmin(user);
         if (isMember(chat, user) || isAdmin){
             return chatsMapper.toChatResponse(chat);
@@ -136,10 +139,14 @@ public class ChatsService {
         }
         chat.setChatUsers(chatUsers);
         chatRepository.save(chat);
+
+        eventPublisher.publishEvent(new CreateChatEvent(ChatEventType.CHAT_CREATED, chat, creator));
+
         return chatsMapper.toChatResponse(chat);
     }
 
     //изменение названия чата
+    @Transactional
     public ChatResponse renameChat(Authentication authentication, RenameChatRequest request) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(request.getId());
@@ -151,11 +158,17 @@ public class ChatsService {
             throw new ResourceNotFoundException("Изменить название приватного чата невозможно!");
         }
 
+        String oldName = chat.getName();
         chat.setName(request.getNewName());
         Chats updatedChat = chatRepository.save(chat);
 
         chatsCache.removeChatToCache(chat);
         chatsCache.addChatToCache(chat);
+
+        // Создаём универсальное событие переименования
+        CreateChatEvent event = new CreateChatEvent(ChatEventType.CHAT_RENAMED, updatedChat, currentUser);
+        event.putPayload("oldName", oldName);
+        eventPublisher.publishEvent(event);
 
         return chatsMapper.toChatResponse(updatedChat);
     }
@@ -196,11 +209,12 @@ public class ChatsService {
     public ChatResponse addUsersToChat(Authentication authentication, UsersChatRequest request) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(request.getId());
-        if (isAllChat(chat)){
+
+        if (isAllChat(chat)) {
             throw new ResourceNotFoundException("Это общий чат");
         }
-        
-        if (!isMember(chat, currentUser)){
+
+        if (!isMember(chat, currentUser)) {
             throw new ResourceNotFoundException("Вы не являетесь членом группы!");
         }
 
@@ -212,52 +226,77 @@ public class ChatsService {
             if (request.getUsersId() != null) {
                 for (Long userId : request.getUsersId()) {
                     if (!currentUserIds.contains(userId)) {
-                        if (userId.equals(currentUser.getId()) || contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
+                        if (userId.equals(currentUser.getId()) ||
+                                contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
                             currentUserIds.add(userId);
                         }
                     }
                 }
             }
-
             CreateChatRequest newChatRequest = new CreateChatRequest();
             newChatRequest.setName(authentication.getName());
             newChatRequest.setUsersId(new ArrayList<>(currentUserIds));
-
+            chatsCache.removeChatToCache(chat);
+            chatsCache.addChatToCache(chat);
             return createChat(authentication, newChatRequest);
         } else if ("GROUP".equals(chat.getType())) {
             List<ChatUser> chatUsers = chat.getChatUsers();
+            List<String> addedUsersNamesList = new ArrayList<>();
 
             for (Long userId : request.getUsersId()) {
-                boolean exists = chatUsers.stream()
-                        .anyMatch(cu -> cu.getUser().getId().equals(userId));
-                if (!exists && contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
+                Optional<ChatUser> existingChatUser = chatUsers.stream()
+                        .filter(cu -> cu.getUser().getId().equals(userId))
+                        .findFirst();
+                System.out.println(existingChatUser);
+                if (existingChatUser.isPresent()) {
+                    ChatUser chatUser = existingChatUser.get();
+                    if (!"Active".equals(chatUser.getStatus())) {
+                        chatUser.setStatus("Active");
+                        chatUserRepository.save(chatUser);
+                        addedUsersNamesList.add(chatUser.getUser().getUsername());
+                        System.out.println(addedUsersNamesList);
+                    }
+                } else if (contactsService.isAcceptedContacts(currentUser.getId(), userId)) {
                     User user = userCache.findUserById(userId);
                     ChatUser newChatUser = new ChatUser();
-
                     newChatUser.setChat(chat);
                     newChatUser.setUser(user);
                     newChatUser.setStatus("Active");
                     chatUsers.add(newChatUser);
+                    addedUsersNamesList.add(user.getUsername());
                 }
             }
 
             chat.setChatUsers(chatUsers);
             chatRepository.save(chat);
+
+            // Публикуем событие только если были добавлены/активированы пользователи
+            if (!addedUsersNamesList.isEmpty()) {
+                String addedUsersNames = String.join(", ", addedUsersNamesList);
+                CreateChatEvent event = new CreateChatEvent(ChatEventType.CHAT_ADDUSER, chat, currentUser);
+                event.putPayload("addedUsersNames", addedUsersNames);
+                eventPublisher.publishEvent(event);
+            }
+            chatsCache.removeChatToCache(chat);
+            chatsCache.addChatToCache(chat);
             return chatsMapper.toChatResponse(chat);
         }
-        chatsCache.removeChatToCache(chat);
-        chatsCache.addChatToCache(chat);
+
+
         return null;
     }
+
 
     // удаление пользователей в чат
     @Transactional
     public ChatResponse removeUserFromChat(Authentication authentication, UsersChatRequest request) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(request.getId());
-        if (isAllChat(chat)){
+
+        if (isAllChat(chat)) {
             throw new ResourceNotFoundException("Это общий чат");
         }
+
         checkCreator(currentUser, chat);
 
         if (request.getUsersId() == null || request.getUsersId().isEmpty()) {
@@ -265,34 +304,45 @@ public class ChatsService {
         }
 
         List<ChatUser> chatUsers = chat.getChatUsers();
+        List<String> removedUsersNamesList = new ArrayList<>();
 
-        chatUsers.forEach(chatUser -> {
+        for (ChatUser chatUser : chatUsers) {
             Long userId = chatUser.getUser().getId();
             if (request.getUsersId().contains(userId) && !userId.equals(chat.getCreatorId())) {
                 chatUser.setStatus("deleted");
                 chatUserRepository.save(chatUser);
+                removedUsersNamesList.add(chatUser.getUser().getUsername());
             }
-        });
+        }
 
         chatRepository.save(chat);
-
         chatsCache.removeChatToCache(chat);
         chatsCache.addChatToCache(chat);
 
+        if (!removedUsersNamesList.isEmpty()) {
+            String removedUsersNames = String.join(", ", removedUsersNamesList);
+            CreateChatEvent event = new CreateChatEvent(ChatEventType.CHAT_REMOVEUSER, chat, currentUser);
+            event.putPayload("removedUsersNames", removedUsersNames);
+            eventPublisher.publishEvent(event);
+        }
+
         return chatsMapper.toChatResponse(chat);
     }
+
 
     //метод выхода из чата
     @Transactional
     public String leaveChat(Authentication authentication, Long chatId) {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(chatId);
-        if (isAllChat(chat)){
+
+        if (isAllChat(chat)) {
             throw new ResourceNotFoundException("Это общий чат");
         }
-        if (!isMember(chat, currentUser)){
+        if (!isMember(chat, currentUser)) {
             throw new ResourceNotFoundException("Вы не состоите в чате");
         }
+
         ChatUser chatUser = chat.getChatUsers()
                 .stream()
                 .filter(cu -> cu.getUser().getId().equals(currentUser.getId()))
@@ -304,13 +354,17 @@ public class ChatsService {
         }
 
         chatUser.setStatus("leave");
-
         chatUserRepository.save(chatUser);
+
         chatsCache.removeChatToCache(chat);
         chatsCache.addChatToCache(chat);
+
+        CreateChatEvent event = new CreateChatEvent(ChatEventType.CHAT_LEAVE, chat, currentUser);
+        event.putPayload("leftUserName", currentUser.getUsername());
+        eventPublisher.publishEvent(event);
+
         return "Вы успешно вышли из чата!";
     }
-
 
     //=====================================================//
     //общая проверка

@@ -8,9 +8,9 @@ import java.util.List;
 public class MessageRequest {
     private Long id;
     private Long chatId;
-    private String type;
-    private String content;
+    private String type; //обязательно
+    private String content; //обязательно
     private String metadata;
-    private List<Long> usersId;
+    private List<Long> usersId; //если нет чата то обязательно
     private Long viewerId;
 }

@@ -18,6 +18,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.transaction.annotation.Propagation;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -85,6 +87,29 @@ public class MessagesService {
     }
 
 
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public void createSystemMessage(MessageRequest request) {
+        System.out.println(request.getChatId());
+        if (request.getChatId() == null) {
+            throw new IllegalArgumentException("chatId обязателен для системного сообщения");
+        }
+        Chats chat = chatsCache.findChatById(request.getChatId());
+
+        Messages message = Messages.builder()
+                .chat(chat)
+                .sender(userCache.findUserById(1L))  // В системных сообщениях можно не указывать конкретного отправителя, либо задать специального "SYSTEM"
+                .content(request.getContent())
+                .type(request.getType())
+                .sendTime(LocalDateTime.now())
+                .metadata("{}")
+                .editedAt(null)
+                .deleted(false)
+                .build();
+
+        messageRepository.save(message);
+        messageMapper.toMessageResponse(message);
+    }
+
     //Создаем сообщение
     public MessageResponse createMessage(Authentication authentication, MessageRequest request){
         User sender = userCache.findUserByUsername(authentication.getName());
@@ -102,7 +127,14 @@ public class MessagesService {
         }
         else {
             List<Long> users = request.getUsersId();
-            if (!users.contains(sender.getId())) {
+
+            System.out.println(users);
+            if (users == null){
+                throw new ResourceNotFoundException("Список адресатов пуст");
+            }
+            if (users.contains(sender.getId()) && users.size() == 1L){
+                throw new ResourceNotFoundException("Вы не можете написать себе");
+            } else {
                 users.add(sender.getId());
             }
             if (users.size() == 2){

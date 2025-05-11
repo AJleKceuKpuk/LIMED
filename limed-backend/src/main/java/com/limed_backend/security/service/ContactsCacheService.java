@@ -66,8 +66,11 @@ public class ContactsCacheService {
     //метод удаления контакта из кэша
     public void removeContactsFromCache(User user, Contacts contact, String typeCache) {
         Cache cache = cacheManager.getCache(typeCache);
-        List<Contacts> contacts = getListContactsFromCache(cache, user);
-        if (contacts.isEmpty()) {
+        List<Contacts> contacts = null;
+        if (cache != null) {
+            contacts = getListContactsFromCache(cache, user);
+        }
+        if (contacts != null && contacts.isEmpty()) {
             System.out.println("Contacts empty -> find all " + typeCache);
             contacts = switch (typeCache) {
                 case "contacts" -> findAllAccept(user.getId());
@@ -77,15 +80,22 @@ public class ContactsCacheService {
                 default -> new ArrayList<>();
             };
         }
-        contacts.removeIf(c -> c.getId().equals(contact.getId()));
-        cache.put(user.getId(), contacts);
+        if (contacts != null) {
+            contacts.removeIf(c -> c.getId().equals(contact.getId()));
+        }
+        if (cache != null) {
+            cache.put(user.getId(), contacts);
+        }
     }
 
     //метод добавления контакта в кэш
     public void addContactToCache(User user, Contacts contact, String typeCache) {
         Cache cache = cacheManager.getCache(typeCache);
-        List<Contacts> contacts = getListContactsFromCache(cache, user);
-        if (contacts.isEmpty()) {
+        List<Contacts> contacts = null;
+        if (cache != null) {
+            contacts = getListContactsFromCache(cache, user);
+        }
+        if (contacts != null && contacts.isEmpty()) {
             System.out.println("Contacts empty -> find all " + typeCache);
             contacts = switch (typeCache) {
                 case "contacts" -> findAllAccept(user.getId());
@@ -95,10 +105,12 @@ public class ContactsCacheService {
                 default -> new ArrayList<>();
             };
         }
-        if (contacts.stream().noneMatch(c -> c.getId().equals(contact.getId()))) {
+        if (contacts != null && contacts.stream().noneMatch(c -> c.getId().equals(contact.getId()))) {
             contacts.add(contact);
             System.out.println(contact.getId());
         }
-        cache.put(user.getId(), contacts);
+        if (cache != null) {
+            cache.put(user.getId(), contacts);
+        }
     }
 }

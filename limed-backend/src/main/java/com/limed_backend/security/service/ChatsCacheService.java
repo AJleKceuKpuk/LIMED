@@ -2,24 +2,18 @@ package com.limed_backend.security.service;
 
 import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
-import com.limed_backend.security.entity.Sanction;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.exception.ResourceNotFoundException;
 import com.limed_backend.security.repository.ChatsRepository;
-import io.lettuce.core.support.caching.RedisCache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
 import org.springframework.cache.CacheManager;
-import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.concurrent.ConcurrentMapCache;
 import org.springframework.security.core.Authentication;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ConcurrentMap;
 
 @Service
 @RequiredArgsConstructor
