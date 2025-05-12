@@ -1,11 +1,7 @@
 package com.limed_backend.security.exception;
 
-import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.ResponseStatus;
-
-@ResponseStatus(HttpStatus.UNAUTHORIZED)
-public class InvalidUsernameOrPasswordException extends RuntimeException {
-    public InvalidUsernameOrPasswordException(){
-        super("Неверный пользователь или пароль");
+public class InvalidUsernameOrPasswordException extends AppException {
+    public InvalidUsernameOrPasswordException() {
+        super(ErrorCode.ERROR_AUTH);
     }
 }

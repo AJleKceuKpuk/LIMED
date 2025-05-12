@@ -101,9 +101,14 @@ public class User implements Serializable {
     @Builder.Default
     private List<Messages> viewedMessages = new ArrayList<>();
 
+    // Связь с обращениями поддержки
+    @OneToMany(mappedBy = "user",
+            cascade = {CascadeType.REMOVE, CascadeType.REFRESH, CascadeType.DETACH},
+            fetch = FetchType.LAZY)
+    @Builder.Default
+    private List<Support> supportTickets = new ArrayList<>();
 
-
-    //TODO МЕТОДЫ
+    //МЕТОДЫ
 
     @Override
     public boolean equals(Object o) {

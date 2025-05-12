@@ -87,6 +87,7 @@ public class MessagesService {
     }
 
 
+    //авто создание системных сообщений
     @Transactional(propagation = Propagation.REQUIRES_NEW)
     public void createSystemMessage(MessageRequest request) {
         System.out.println(request.getChatId());

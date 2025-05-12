@@ -20,11 +20,9 @@ public class JwtCore {
     @Value("${app.jwt.secret}")
     private String jwtSecret;
 
-    // 15 минут для access token (в миллисекундах)
     @Value("${app.jwt.accessTokenExpiration}")
     private Long accessTokenExpiration;
 
-    // 7 дней для refresh token (в миллисекундах)
     @Value("${app.jwt.refreshTokenExpiration}")
     private Long refreshTokenExpiration;
 

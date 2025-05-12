@@ -31,7 +31,17 @@ public class DataInitializerUser implements CommandLineRunner {
         roles.add(userRole);
         roles.add(adminRole);
         if (userRepository.count() == 0) {
-            User user = User.builder()
+            User system = User.builder()
+                    .username("SYSTEM")
+                    .email("SYSTEM@limed.by")
+                    .password(passwordEncoder.encode("system"))
+                    .roles(roles)
+                    .status("offline")
+                    .dateRegistration(LocalDate.now())
+                    .build();
+            userRepository.save(system);
+
+            User admin = User.builder()
                     .username("Admin")
                     .email("admin@limed.by")
                     .password(passwordEncoder.encode("123"))
@@ -39,8 +49,9 @@ public class DataInitializerUser implements CommandLineRunner {
                     .status("offline")
                     .dateRegistration(LocalDate.now())
                     .build();
+            userRepository.save(admin);
 
-            userRepository.save(user);
+
         }
     }
 }
