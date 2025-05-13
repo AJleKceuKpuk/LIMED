@@ -5,7 +5,7 @@ import lombok.Getter;
 
 @Getter
 @AllArgsConstructor
-public enum SupportTicketType {
+public enum SupportType {
     GAME_SUPPORT("Тех.поддержка по игре"),
     ACCOUNT_SUPPORT("Тех.поддержка по аккаунту"),
     UNBLOCKING("Разблокировка"),

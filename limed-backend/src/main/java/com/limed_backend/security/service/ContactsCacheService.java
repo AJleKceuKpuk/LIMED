@@ -22,7 +22,6 @@ public class ContactsCacheService {
     //Список друзей
     @Cacheable(value = "contacts", key = "#id")
     public List<Contacts> findAllAccept(Long id){
-        System.out.println("find test");
         return contactsRepository.findAcceptedByUser(id)
                 .orElseGet(ArrayList::new);
     }

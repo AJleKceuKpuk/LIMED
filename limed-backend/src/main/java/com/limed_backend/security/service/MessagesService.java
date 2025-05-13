@@ -7,7 +7,7 @@ import com.limed_backend.security.dto.Message.MessageResponse;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.Messages;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.exception.exceprions.ResourceNotFoundException;
 import com.limed_backend.security.mapper.MessageMapper;
 import com.limed_backend.security.repository.ChatsRepository;
 import com.limed_backend.security.repository.MessageRepository;
@@ -41,7 +41,7 @@ public class MessagesService {
     //получаем сообщение по ID
     public Messages findMessageById(Long id){
         return messageRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Сообщение не найдено"));
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
     //получить все сообщения с чата
@@ -53,8 +53,7 @@ public class MessagesService {
                 .anyMatch(chatUser -> chatUser.getUser().getId().equals(user.getId()));
 
         if (!isMember && !userService.isAdmin(user)) {
-            throw new ResourceNotFoundException("User " + user.getUsername() +
-                    " is not a member of chat with id " + chatId);
+            throw new ResourceNotFoundException();
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
         Page<Messages> messagesPage;
@@ -80,7 +79,7 @@ public class MessagesService {
         User admin = userCache.findUserByUsername(authentication.getName());
         Pageable pageable = PageRequest.of(page, size, Sort.by("sendTime").descending());
         if (!userService.isAdmin(admin)) {
-            throw new ResourceNotFoundException("Доступно только администраторам!");
+            throw new ResourceNotFoundException();
         }
         Page<Messages> messagesPage = messageRepository.AllMessagesFromUser(userId, pageable);
         return messagesPage.map(messageMapper::toMessageResponse);
@@ -92,7 +91,7 @@ public class MessagesService {
     public void createSystemMessage(MessageRequest request) {
         System.out.println(request.getChatId());
         if (request.getChatId() == null) {
-            throw new IllegalArgumentException("chatId обязателен для системного сообщения");
+            throw new IllegalArgumentException();
         }
         Chats chat = chatsCache.findChatById(request.getChatId());
 
@@ -122,7 +121,7 @@ public class MessagesService {
                     chat.setStatus("Active");
                     chatsRepository.save(chat);
                 }else {
-                    throw new ResourceNotFoundException("Chat deleted!");
+                    throw new ResourceNotFoundException();
                 }
             }
         }
@@ -131,10 +130,10 @@ public class MessagesService {
 
             System.out.println(users);
             if (users == null){
-                throw new ResourceNotFoundException("Список адресатов пуст");
+                throw new ResourceNotFoundException();
             }
             if (users.contains(sender.getId()) && users.size() == 1L){
-                throw new ResourceNotFoundException("Вы не можете написать себе");
+                throw new ResourceNotFoundException();
             } else {
                 users.add(sender.getId());
             }

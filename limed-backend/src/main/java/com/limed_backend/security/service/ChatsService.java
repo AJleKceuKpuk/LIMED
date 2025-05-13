@@ -5,7 +5,7 @@ import com.limed_backend.security.dto.Chat.CreateChatEvent;
 import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.exception.exceprions.ResourceNotFoundException;
 import com.limed_backend.security.mapper.ChatsMapper;
 import com.limed_backend.security.entity.enums.ChatEventType;
 import com.limed_backend.security.repository.ChatUserRepository;
@@ -152,10 +152,10 @@ public class ChatsService {
         Chats chat = chatsCache.findChatById(request.getId());
         checkCreator(currentUser, chat);
         if (isAllChat(chat)){
-            throw new ResourceNotFoundException("Запрещено изменять общий чат");
+            throw new ResourceNotFoundException();
         }
         if ("PRIVATE".equals(chat.getType())){
-            throw new ResourceNotFoundException("Изменить название приватного чата невозможно!");
+            throw new ResourceNotFoundException();
         }
 
         String oldName = chat.getName();
@@ -179,7 +179,7 @@ public class ChatsService {
         Chats chat = chatsCache.findChatById(id);
         checkCreator(currentUser, chat);
         if (chat.getId() == 1){
-            throw new ResourceNotFoundException("Запрещено изменять общий чат");
+            throw new ResourceNotFoundException();
         }
         chat.setStatus("Deleted");
         chatRepository.save(chat);
@@ -195,7 +195,7 @@ public class ChatsService {
         User currentUser = userCache.findUserByUsername(authentication.getName());
         Chats chat = chatsCache.findChatById(id);
         if (isAllChat(chat)){
-            throw new ResourceNotFoundException("Запрещено изменять общий чат");
+            throw new ResourceNotFoundException();
         }
         chatsCache.removeChatToCache(chat);
         checkCreator(currentUser, chat);
@@ -211,11 +211,11 @@ public class ChatsService {
         Chats chat = chatsCache.findChatById(request.getId());
 
         if (isAllChat(chat)) {
-            throw new ResourceNotFoundException("Это общий чат");
+            throw new ResourceNotFoundException();
         }
 
         if (!isMember(chat, currentUser)) {
-            throw new ResourceNotFoundException("Вы не являетесь членом группы!");
+            throw new ResourceNotFoundException();
         }
 
         if ("PRIVATE".equals(chat.getType())) {
@@ -294,7 +294,7 @@ public class ChatsService {
         Chats chat = chatsCache.findChatById(request.getId());
 
         if (isAllChat(chat)) {
-            throw new ResourceNotFoundException("Это общий чат");
+            throw new ResourceNotFoundException();
         }
 
         checkCreator(currentUser, chat);
@@ -337,20 +337,20 @@ public class ChatsService {
         Chats chat = chatsCache.findChatById(chatId);
 
         if (isAllChat(chat)) {
-            throw new ResourceNotFoundException("Это общий чат");
+            throw new ResourceNotFoundException();
         }
         if (!isMember(chat, currentUser)) {
-            throw new ResourceNotFoundException("Вы не состоите в чате");
+            throw new ResourceNotFoundException();
         }
 
         ChatUser chatUser = chat.getChatUsers()
                 .stream()
                 .filter(cu -> cu.getUser().getId().equals(currentUser.getId()))
                 .findFirst()
-                .orElseThrow(() -> new ResourceNotFoundException("User is not a member of chat with id " + chatId));
+                .orElseThrow(ResourceNotFoundException::new);
 
         if (chat.getCreatorId().equals(currentUser.getId())) {
-            throw new ResourceNotFoundException("Создатель чата не может выйти из чата");
+            throw new ResourceNotFoundException();
         }
 
         chatUser.setStatus("leave");
@@ -370,7 +370,7 @@ public class ChatsService {
     //общая проверка
     private void checkCreator(User currentUser, Chats chat) {
         if (!isCreator(currentUser, chat) && !userService.isAdmin(currentUser)) {
-            throw new ResourceNotFoundException("Только создатель чата или администратор могут выполнять эту операцию");
+            throw new ResourceNotFoundException();
         }
     }
 

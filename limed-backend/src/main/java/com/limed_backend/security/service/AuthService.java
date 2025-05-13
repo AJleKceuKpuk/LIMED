@@ -4,8 +4,9 @@ import com.limed_backend.security.dto.Auth.LoginRequest;
 import com.limed_backend.security.dto.Auth.RegistrationRequest;
 import com.limed_backend.security.dto.Token.TokenResponse;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.*;
 import com.limed_backend.security.config.JwtCore;
+import com.limed_backend.security.exception.exceprions.InvalidUsernameOrPasswordException;
+import com.limed_backend.security.exception.exceprions.UnauthorizedAccessException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -53,7 +54,7 @@ public class AuthService {
         tokenService.revokeRefreshTokenFromCookies(request, response);
         String accessToken = jwtCore.getJwtFromHeader(request);
         if (accessToken == null){
-            return ResponseEntity.ok("Без авторизации нельзя");
+            throw new UnauthorizedAccessException();
         }
         User user = userCache.findUserByUsername(jwtCore.getUsernameFromToken(accessToken));
         tokenCache.revokeToken(jwtCore.getJti(accessToken));

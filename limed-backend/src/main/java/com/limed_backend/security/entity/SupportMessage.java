@@ -6,6 +6,7 @@ import jakarta.persistence.Id;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
+import java.util.Objects;
 
 @Entity
 @Table(name = "support_messages")
@@ -21,10 +22,6 @@ public class SupportMessage implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    // Тип сообщения (например, текст, уведомление и прочее)
-    @Column(nullable = false)
-    private String type;
 
     // Содержание сообщения
     @Column(nullable = false, columnDefinition = "TEXT")
@@ -53,17 +50,29 @@ public class SupportMessage implements Serializable {
     @JoinColumn(name = "sender_id", nullable = false)
     private User sender;
 
+
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        SupportMessage that = (SupportMessage) o;
+        return Objects.equals(id, that.id) && Objects.equals(content, that.content) && Objects.equals(sendTime, that.sendTime) && Objects.equals(metadata, that.metadata) && Objects.equals(editedAt, that.editedAt);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, content, sendTime, metadata, editedAt);
+    }
+
     @Override
     public String toString() {
         return "SupportMessage{" +
                 "id=" + id +
-                ", type='" + type + '\'' +
                 ", content='" + content + '\'' +
                 ", sendTime=" + sendTime +
                 ", metadata='" + metadata + '\'' +
                 ", editedAt=" + editedAt +
-                ", sender=" + sender +
-                ", support=" + support +
+                ", sender=" + sender.getId() +
+                ", support=" + support.getId() +
                 '}';
     }
 }

@@ -3,7 +3,7 @@ package com.limed_backend.security.service;
 import com.limed_backend.security.entity.ChatUser;
 import com.limed_backend.security.entity.Chats;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.exception.exceprions.ResourceNotFoundException;
 import com.limed_backend.security.repository.ChatsRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -27,14 +27,14 @@ public class ChatsCacheService {
     @Cacheable(value = "chat", key = "'all'")
     public Chats findAllChat(){
         return chatsRepository.findById(1L)
-                .orElseThrow(() -> new ResourceNotFoundException("Чат не найден!"));
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
     //поиск чата по id (для информации в профиле чата)
     @Cacheable(value = "chat", key = "#id")
     public Chats findChatById(Long id){
         return chatsRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Чат не найден"));
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
     //поиск всех чатов пользователя, не удаленных

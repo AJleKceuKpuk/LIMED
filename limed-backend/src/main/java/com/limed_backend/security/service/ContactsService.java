@@ -4,7 +4,7 @@ import com.limed_backend.security.dto.Contact.NoFriendResponse;
 import com.limed_backend.security.dto.Contact.FriendResponse;
 import com.limed_backend.security.entity.Contacts;
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.exception.exceprions.ResourceNotFoundException;
 import com.limed_backend.security.mapper.ContactsMapper;
 import com.limed_backend.security.repository.ContactsRepository;
 import lombok.RequiredArgsConstructor;
@@ -189,7 +189,7 @@ public class ContactsService {
         }
 
         Contacts contactsInvite = findDirectStatus(senderId, receiver.getId(), "Pending")
-                .orElseThrow(() -> new ResourceNotFoundException("У вас нет предложений для дружбы от пользователя с id " + senderId));
+                .orElseThrow(ResourceNotFoundException::new);
 
         contactsInvite.setStatus("Accepted");
         contactsRepository.save(contactsInvite);
@@ -233,7 +233,7 @@ public class ContactsService {
         }
 
         Contacts acceptedContacts = findContactsAccepted(senderId, receiver.getId())
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не является вашим другом"));
+                .orElseThrow(ResourceNotFoundException::new);
 
         contactsRepository.delete(acceptedContacts);
 
@@ -249,7 +249,7 @@ public class ContactsService {
         User receiver = userCache.findUserById(receiverId);
 
         Contacts ignoreUser = findDirectStatus(sender.getId(), receiverId, "Ignore")
-                .orElseThrow(() -> new ResourceNotFoundException("Вы не игнорируете данного пользователя"));
+                .orElseThrow(ResourceNotFoundException::new);
 
         contactsRepository.delete(ignoreUser);
 

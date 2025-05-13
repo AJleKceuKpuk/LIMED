@@ -1,7 +1,7 @@
 package com.limed_backend.security.service;
 
 import com.limed_backend.security.entity.User;
-import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.exception.exceprions.ResourceNotFoundException;
 import com.limed_backend.security.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.Cache;
@@ -20,14 +20,14 @@ public class UserCacheService {
     @Cacheable(value = "userCache", key = "#username")
     public User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
     //получаем пользователя по Id и заносим в кэш
     @Cacheable(value = "userCache", key = "#id")
     public User findUserById(Long id) {
         return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Пользователь не найден"));
+                .orElseThrow(ResourceNotFoundException::new);
     }
 
     // добавляем в кэш пользователя

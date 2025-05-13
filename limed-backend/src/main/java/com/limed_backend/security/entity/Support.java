@@ -1,13 +1,13 @@
 package com.limed_backend.security.entity;
 
-import com.limed_backend.security.entity.enums.SupportTicketType;
+import com.limed_backend.security.entity.enums.SupportStatus;
+import com.limed_backend.security.entity.enums.SupportType;
 import jakarta.persistence.*;
 import lombok.*;
 import jakarta.persistence.Id;
 
 import java.io.Serializable;
 import java.time.LocalDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Objects;
 
@@ -29,13 +29,14 @@ public class Support implements Serializable {
     private String heading;
 
     @Enumerated(EnumType.STRING)
-    private SupportTicketType type;
+    private SupportType type;
 
     private LocalDateTime createdAt;
 
-    private String status;
+    @Enumerated(EnumType.STRING)
+    private SupportStatus status; //NEW //OPEN //IN_PROGRESS //WAITING_USER_RESPONSE //WAITING_SUPPORT_RESPONSE //CLOSED //ESCALATED
 
-    private Date updatedAt;
+    private LocalDateTime updatedAt;
 
     //СВЯЗИ
 

@@ -1,7 +1,7 @@
 package com.limed_backend.security.service;
 
 import com.limed_backend.security.entity.Role;
-import com.limed_backend.security.exception.ResourceNotFoundException;
+import com.limed_backend.security.exception.exceprions.ResourceNotFoundException;
 import com.limed_backend.security.repository.RoleRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.cache.annotation.Cacheable;
@@ -16,6 +16,6 @@ public class RoleCacheService {
     @Cacheable(value = "roleCache", key = "#role")
     public Role getRole(String role){
         return roleRepository.findByName(role)
-                .orElseThrow(() -> new ResourceNotFoundException("Роль " + role + " не найдена"));
+                .orElseThrow(ResourceNotFoundException::new);
     }
 }
