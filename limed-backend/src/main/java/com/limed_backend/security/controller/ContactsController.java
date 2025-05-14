@@ -1,6 +1,7 @@
 package com.limed_backend.security.controller;
 
 import com.limed_backend.security.dto.Contact.FriendResponse;
+import com.limed_backend.security.dto.Contact.FriendUsernameRequest;
 import com.limed_backend.security.dto.Contact.NoFriendResponse;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ContactsService;
@@ -50,6 +51,14 @@ public class ContactsController {
                                               @PathVariable Long id){
         System.out.println("/add contacts /id");
         String resultMessage = contactsService.addContacts(authentication, id);
+        return ResponseEntity.ok(resultMessage);
+    }
+
+    @PostMapping("/add-contacts")
+    public ResponseEntity<String> addContactsByUsername(Authentication authentication,
+                                                        FriendUsernameRequest request){
+        System.out.println("/add contacts username");
+        String resultMessage = contactsService.addContactsByUsername(authentication, request);
         return ResponseEntity.ok(resultMessage);
     }
 
