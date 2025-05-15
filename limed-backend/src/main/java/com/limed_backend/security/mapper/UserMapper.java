@@ -1,6 +1,7 @@
 package com.limed_backend.security.mapper;
 
 
+import com.limed_backend.security.dto.User.UserProfileResponse;
 import com.limed_backend.security.dto.User.UserResponse;
 import com.limed_backend.security.entity.Role;
 import com.limed_backend.security.entity.User;
@@ -33,5 +34,19 @@ public interface UserMapper {
     // Метод для преобразования User в String
     default String map(User user) {
         return user != null ? user.getUsername() : null;
+    }
+
+    @Named("UserProfileResponse")
+    default UserProfileResponse toUserProfileResponse(User user){
+
+        return new UserProfileResponse(
+                user.getId(),
+                user.getUsername(),
+                user.getEmail(),
+                user.getDateRegistration(),
+                user.getRoles().stream()
+                        .map(Role::getName)
+                        .toList()
+        );
     }
 }

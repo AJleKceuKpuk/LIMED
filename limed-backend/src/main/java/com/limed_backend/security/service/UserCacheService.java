@@ -16,21 +16,19 @@ public class UserCacheService {
     private final UserRepository userRepository;
     private final CacheManager cacheManager;
 
-    //получаем пользователя по имени и заносим в кэш
+   /** Получаем пользователя по имени и заносим в кэш*/
     @Cacheable(value = "userCache", key = "#username")
     public User findUserByUsername(String username) {
         return userRepository.findByUsername(username)
                 .orElseThrow(ResourceNotFoundException::new);
     }
-
-    //получаем пользователя по Id и заносим в кэш
+   /** Получаем пользователя по Id и заносим в кэш*/
     @Cacheable(value = "userCache", key = "#id")
     public User findUserById(Long id) {
         return userRepository.findById(id)
                 .orElseThrow(ResourceNotFoundException::new);
     }
-
-    // добавляем в кэш пользователя
+    /** Добавляем в кэш пользователя*/
     public void addUserCache(User user) {
         Cache userCache = cacheManager.getCache("userCache");
         if (userCache != null) {
@@ -38,8 +36,7 @@ public class UserCacheService {
             userCache.put(user.getUsername(), user);
         }
     }
-
-    //удаляем пользователя из кэша
+    /** Удаляем пользователя из кэша*/
     public void deleteUserCache(User user){
         Cache userCache = cacheManager.getCache("userCache");
         if (userCache != null) {

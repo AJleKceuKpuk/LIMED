@@ -16,12 +16,14 @@ public class SanctionController {
 
     private final SanctionService sanctionService;
 
+    /** Получение активных блокировок по 20 шт*/
     @GetMapping("/active/page={page}")
     public ResponseEntity<List<ActiveSanctionResponse>> getAllActiveSanctions(@PathVariable int page){
         List<ActiveSanctionResponse> activeSanctions= sanctionService.getAllActiveSanctions(page);
         return ResponseEntity.ok(activeSanctions);
     }
 
+    /** Получение истекших либо отозванных блокировок*/
     @GetMapping("/inactive/page={page}")
     public ResponseEntity<List<InactiveSanctionResponse>> getAllInactiveSanctions(@PathVariable int page){
         List<InactiveSanctionResponse> inactiveSanctions= sanctionService.getAllInactiveSanctions(page);

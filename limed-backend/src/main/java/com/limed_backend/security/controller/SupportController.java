@@ -18,6 +18,7 @@ public class SupportController {
     private final SupportService supportService;
     private final SupportMessageService supportMessageService;
 
+    /** Все тикеты пользователя*/
     @GetMapping
     public ResponseEntity<Page<SupportResponse>> getAllSupports(Authentication authentication,
                                                                 SupportStatusRequest request,
@@ -27,12 +28,14 @@ public class SupportController {
         return ResponseEntity.ok(supports);
     }
 
+    /** Если или нет непрочитанных сообщений*/
     @GetMapping("/unread")
     public ResponseEntity<Boolean> hasUnreadSupportMessages(Authentication authentication){
         boolean result = supportService.hasUnreadSupportMessages(authentication);
         return ResponseEntity.ok(result);
     }
 
+    /** Получение информации о тикете*/
     @GetMapping("/ticket={id}")
     public ResponseEntity<SupportResponse> getSupportById(Authentication authentication,
                                                           @PathVariable Long id){
@@ -40,6 +43,7 @@ public class SupportController {
         return ResponseEntity.ok(support);
     }
 
+    /** Получение сообщений тикета*/
     @GetMapping("/ticket={id}/messages")
     public ResponseEntity<Page<SupportMessageResponse>> getMessagesFromTicket(Authentication authentication,
                                                                         @PathVariable Long id,
@@ -49,6 +53,7 @@ public class SupportController {
         return ResponseEntity.ok(messages);
     }
 
+    /** Создание тикета*/
     @PostMapping("/create")
     public ResponseEntity<SupportResponse> createTicket(Authentication authentication,
                                                         SupportCreateRequest request){
@@ -57,6 +62,7 @@ public class SupportController {
 
     }
 
+    /** Создание сообщения в тикете*/
     @PostMapping("/ticket={id}/create")
     public ResponseEntity<SupportMessageResponse> createMessageTicket(Authentication authentication,
                                                                       SupportMessageCreateRequest request,
@@ -64,5 +70,4 @@ public class SupportController {
         SupportMessageResponse message = supportMessageService.createSupportMessage(authentication, request, id);
         return ResponseEntity.ok(message);
     }
-
 }

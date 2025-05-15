@@ -7,7 +7,6 @@ import com.limed_backend.security.entity.User;
 import com.limed_backend.security.service.ChatsService;
 import com.limed_backend.security.service.MessagesService;
 import com.limed_backend.security.service.UserCacheService;
-import com.limed_backend.security.service.UserService;
 import org.springframework.data.domain.Page;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -112,6 +111,7 @@ public class ChatsController {
         return ResponseEntity.ok(message);
     }
 
+    /** Изменение сообщения*/
     @PostMapping("/chat={chatId}/edit-message")
     public ResponseEntity<MessageResponse> editMessage(Authentication authentication,
                                                        @RequestBody MessageRequest request) {
@@ -119,6 +119,7 @@ public class ChatsController {
         return ResponseEntity.ok(message);
     }
 
+    /** Удаление сообщения*/
     @PostMapping("/chat={chatId}/delete-message")
     public ResponseEntity<String> deleteMessage(Authentication authentication,
                                                 @RequestBody MessageRequest request) {
@@ -126,6 +127,7 @@ public class ChatsController {
         return ResponseEntity.ok(message);
     }
 
+    /** Количество непрочитанных сообщений*/
     @GetMapping("/unread")
     public ResponseEntity<Long> unreadMessages(Authentication authentication){
         User user = userCache.findUserByUsername(authentication.getName());

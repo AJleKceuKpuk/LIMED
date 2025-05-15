@@ -18,7 +18,6 @@ public class TokenCacheService {
         return tokenRepository.findByJti(jti);
     }
 
-    //Отзыв токена (revoke из БД)
     @CacheEvict(value = "tokenCache", key = "#jti")
     public void revokeToken(String jti) {
         Token token = getTokenByJti(jti);

@@ -18,7 +18,6 @@ public class ChatEventListener {
     public void ChatCreated(CreateChatEvent createChatEvent) {
         MessageRequest messageRequest = new MessageRequest();
         messageRequest.setChatId(createChatEvent.getChat().getId());
-        messageRequest.setType("SYSTEM");
         messageRequest.setContent(createChatEvent.getUser().getUsername() + " создал новый чат");
         messageService.createSystemMessage(messageRequest);
     }
@@ -28,7 +27,6 @@ public class ChatEventListener {
         String oldName = (String) createChatEvent.getPayload().get("oldName");
         MessageRequest messageRequest = new MessageRequest();
         messageRequest.setChatId(createChatEvent.getChat().getId());
-        messageRequest.setType("SYSTEM");
         messageRequest.setContent(String.format("%s переименовал чат с '%s' на '%s'",
                 createChatEvent.getUser().getUsername(), oldName, createChatEvent.getChat().getName()));
         System.out.println("Системное сообщение: " + messageRequest.getContent());
@@ -45,7 +43,6 @@ public class ChatEventListener {
 
         MessageRequest messageRequest = new MessageRequest();
         messageRequest.setChatId(createChatEvent.getChat().getId());
-        messageRequest.setType("SYSTEM");
         messageRequest.setContent(content);
 
         System.out.println("Системное сообщение: " + messageRequest.getContent());
@@ -64,7 +61,6 @@ public class ChatEventListener {
 
         MessageRequest messageRequest = new MessageRequest();
         messageRequest.setChatId(chatEvent.getChat().getId());
-        messageRequest.setType("SYSTEM");
         messageRequest.setContent(content);
 
         System.out.println("Системное сообщение: " + messageRequest.getContent());
@@ -87,7 +83,6 @@ public class ChatEventListener {
 
         MessageRequest messageRequest = new MessageRequest();
         messageRequest.setChatId(chatEvent.getChat().getId());
-        messageRequest.setType("SYSTEM");
         messageRequest.setContent(content);
 
         System.out.println("Системное сообщение: " + messageRequest.getContent());

@@ -5,13 +5,6 @@ import com.limed_backend.security.dto.Chat.ChatResponse;
 import com.limed_backend.security.dto.Message.MessageResponse;
 import com.limed_backend.security.dto.Sanction.CreateSanctionRequest;
 import com.limed_backend.security.dto.Sanction.DeleteSanctionRequest;
-import com.limed_backend.security.dto.User.UserResponse;
-import com.limed_backend.security.dto.User.UpdateEmailRequest;
-import com.limed_backend.security.dto.User.UpdateRoleRequest;
-import com.limed_backend.security.dto.User.UpdateUsernameRequest;
-import com.limed_backend.security.entity.User;
-import com.limed_backend.security.mapper.UserMapper;
-import com.limed_backend.security.repository.UserRepository;
 import com.limed_backend.security.service.*;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -20,7 +13,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/admin")
@@ -28,49 +20,9 @@ import java.util.stream.Collectors;
 public class AdminController {
 
 
-    private final UserRepository userRepository;
-    private final UserMapper userMapper;
-    private final AdminService adminService;
     private final ChatsService chatsService;
     private final MessagesService messagesService;
     private final SanctionService sanctionService;
-    private final UserCacheService userCache;
-
-    @GetMapping("/get-allusers")
-    public List<UserResponse> getAllUsers() {
-        List<User> users = userRepository.findAll();
-        return users.stream()
-                .map(userMapper::toUserResponse)
-                .collect(Collectors.toList());
-    }
-
-    @GetMapping("/get-user/{id}")
-    public ResponseEntity<UserResponse> getUser(@PathVariable Long id) {
-        User user = userCache.findUserById(id);
-        UserResponse userResponse = userMapper.toUserResponse(user);
-        return ResponseEntity.ok(userResponse);
-    }
-
-    @PutMapping("/edit-username/{id}")
-    public ResponseEntity<String> editUsername(@RequestBody UpdateUsernameRequest request,
-                                              @PathVariable Long id) {
-        String result = adminService.editUsername(request, id);
-        return ResponseEntity.ok(result);
-    }
-
-    @PutMapping("/edit-email/{id}")
-    public ResponseEntity<String> editEmail(@RequestBody UpdateEmailRequest request,
-                                               @PathVariable Long id) {
-        String result = adminService.editEmail(request, id);
-        return ResponseEntity.ok(result);
-    }
-
-    @PutMapping("/edit-role")
-    public ResponseEntity<String> editRole(@RequestBody UpdateRoleRequest request) {
-        String result = adminService.editRole(request);
-
-        return ResponseEntity.ok(result);
-    }
 
 
     @PostMapping("/give-sanction")
