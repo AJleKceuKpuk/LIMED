@@ -11,6 +11,7 @@ import java.io.Serializable;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @AllArgsConstructor
 @NoArgsConstructor
-public class FriendUsernameRequest implements Serializable {
+public class ContactAddRequest implements Serializable {
+    private Long id;
     private String username;
 }

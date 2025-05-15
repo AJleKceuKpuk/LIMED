@@ -17,18 +17,21 @@ public class AuthController {
 
     private final AuthService authService;
 
+    /** Регистрация ногово пользователя*/
     @PostMapping("/registration")
     public String registration(@RequestBody RegistrationRequest request) {
         System.out.println("/registration");
         return authService.registration(request);
     }
 
+    /** Вход пользователя*/
     @PostMapping("/login")
     public TokenResponse login(HttpServletRequest request, @RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         System.out.println("/login");
         return authService.login(request, loginRequest, response);
     }
 
+    /** Выход пользователя*/
     @PostMapping("/logout")
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
         System.out.println("/logout");

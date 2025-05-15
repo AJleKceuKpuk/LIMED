@@ -99,7 +99,7 @@ public class MessagesService {
                 .chat(chat)
                 .sender(userCache.findUserById(1L))  // В системных сообщениях можно не указывать конкретного отправителя, либо задать специального "SYSTEM"
                 .content(request.getContent())
-                .type(request.getType())
+                .type("SYSTEM")
                 .sendTime(LocalDateTime.now())
                 .metadata("{}")
                 .editedAt(null)
@@ -163,7 +163,7 @@ public class MessagesService {
                 .chat(chat)
                 .sender(sender)
                 .content(request.getContent())
-                .type(request.getType())
+                .type("MESSAGE")
                 .sendTime(LocalDateTime.now())
                 .metadata("{}")
                 .editedAt(null)

@@ -16,6 +16,7 @@ public class TokenController {
 
     private final TokenService tokenService;
 
+    /** Обновление Access токена*/
     @PostMapping("/refresh")
     public ResponseEntity<?> refreshAccessToken(HttpServletRequest request) {
         try {

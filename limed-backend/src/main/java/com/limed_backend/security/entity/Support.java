@@ -38,6 +38,9 @@ public class Support implements Serializable {
 
     private LocalDateTime updatedAt;
 
+    private boolean readByUser;
+    private boolean readByAdmin;
+
     //СВЯЗИ
 
     @ManyToOne(fetch = FetchType.LAZY)

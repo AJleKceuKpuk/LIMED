@@ -1,4 +1,4 @@
-package com.limed_backend.security.controller;
+package com.limed_backend.security.controller.User;
 
 import com.limed_backend.security.dto.Token.TokenResponse;
 import com.limed_backend.security.dto.User.UpdateEmailRequest;
@@ -16,13 +16,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 @RequestMapping("/user")
 @RequiredArgsConstructor
-public class UserController {
-
+public class ProfileController {
 
     private final UserService userService;
 
-
-
+    /** Просмотр профиля пользователя*/
     @GetMapping("/profile")
     public ResponseEntity<UserProfileResponse> getProfile(Authentication authentication) {
         System.out.println("/profile");
@@ -30,6 +28,7 @@ public class UserController {
         return ResponseEntity.ok(user);
     }
 
+     /** Изменение имени пользователя*/
     @PutMapping("/update-username")
     public ResponseEntity<TokenResponse> updateUsername(HttpServletRequest request, @RequestBody UpdateUsernameRequest userRequest,
                                                         Authentication authentication,
@@ -39,6 +38,7 @@ public class UserController {
         return ResponseEntity.ok(tokenResponse);
     }
 
+    /** Изменение Email пользователя*/
     @PutMapping("/update-email")
     public ResponseEntity<String> updateEmail(@RequestBody UpdateEmailRequest request,
                                               Authentication authentication) {
@@ -47,6 +47,7 @@ public class UserController {
         return ResponseEntity.ok(result);
     }
 
+    /** Изменение Пароля пользователя*/
     @PutMapping("/update-password")
     public ResponseEntity<String> updatePassword(@RequestBody UpdatePasswordRequest request,
                                                  Authentication authentication) {

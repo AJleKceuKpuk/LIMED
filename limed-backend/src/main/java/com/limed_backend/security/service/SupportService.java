@@ -8,8 +8,7 @@ import com.limed_backend.security.entity.SupportMessage;
 import com.limed_backend.security.entity.User;
 import com.limed_backend.security.entity.enums.SupportStatus;
 import com.limed_backend.security.entity.enums.SupportType;
-import com.limed_backend.security.exception.exceprions.ResourceNotFoundException;
-import com.limed_backend.security.exception.exceprions.AdminAccessRequiredException;
+import com.limed_backend.security.exception.exceprions.*;
 import com.limed_backend.security.mapper.SupportMapper;
 import com.limed_backend.security.repository.SupportMessageRepository;
 import com.limed_backend.security.repository.SupportRepository;
@@ -36,28 +35,70 @@ public class SupportService {
     private final UserService userService;
     private final SupportMapper supportMapper;
 
-    public Support getSupportById(Long id){
+
+    public Support findSupportById(Long id){
         return supportRepository.findById(id)
                 .orElseThrow(ResourceNotFoundException::new);
     }
 
-    public List<Support> getAllSupportUser(Authentication authentication){
+    public boolean hasUnreadSupportMessages(Authentication authentication) {
         User user = userCache.findUserByUsername(authentication.getName());
-        return supportRepository.getAllSupportByUserId(user.getId())
-                .orElseGet(ArrayList::new);
+        return supportRepository.existsByUserAndReadByUserFalse(user);
     }
 
-    public Page<Support> getAllSupport(Authentication authentication, SupportStatusRequest request, int size, int page) {
+    public boolean checkAdminAccess(Authentication authentication){
         User user = userCache.findUserByUsername(authentication.getName());
-        if (!userService.isAdmin(user)) {
+        return userService.isAdmin(user);
+    }
+
+    public boolean checkUserAccess(Authentication authentication, Support support){
+        User user = userCache.findUserByUsername(authentication.getName());
+        return support.getUser().equals(user);
+    }
+
+    public SupportResponse getSupportById(Authentication authentication, Long id){
+        Support support = findSupportById(id);
+        if (!checkAdminAccess(authentication) && !checkUserAccess(authentication, support)){
+            throw new AdminAccessRequiredException();
+        }
+        return supportMapper.toSupportResponse(support);
+    }
+
+
+    //список всех обращений для админа со статусом
+    public Page<SupportResponse> getAllSupportByAdmin(Authentication authentication,
+                                                      SupportStatusRequest request,
+                                                      int size,
+                                                      int page) {
+
+        if (!checkAdminAccess(authentication)){
             throw new AdminAccessRequiredException();
         }
         Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+        Page<Support> supports;
         if (request.getStatus() == null || request.getStatus().isEmpty()) {
-            return supportRepository.findAll(pageable);
+            supports = supportRepository.findAll(pageable);
+        } else {
+            SupportStatus status = SupportStatus.valueOf(request.getStatus());
+            supports = supportRepository.getAllSupportByStatus(status, pageable);
         }
-        SupportStatus status = SupportStatus.valueOf(request.getStatus());
-        return supportRepository.getAllSupportByStatus(status, pageable);
+        return supports.map(supportMapper::toSupportResponse);
+    }
+
+    public Page<SupportResponse> getAllSupportByUser(Authentication authentication,
+                                                     SupportStatusRequest request,
+                                                     int size,
+                                                     int page){
+        User user = userCache.findUserByUsername(authentication.getName());
+        Pageable pageable = PageRequest.of(page, size, Sort.by("updatedAt").descending());
+        Page<Support> supports;
+        if (request.getStatus() == null || request.getStatus().isEmpty()) {
+            supports = supportRepository.getAllSupportByUserId(user.getId(), pageable);
+        } else {
+            SupportStatus status = SupportStatus.valueOf(request.getStatus());
+            supports = supportRepository.getAllSupportByUserIdAndStatus(user.getId(), status, pageable);
+        }
+        return supports.map(supportMapper::toSupportResponse);
     }
 
     @Transactional
@@ -71,6 +112,8 @@ public class SupportService {
                 .createdAt(LocalDateTime.now())
                 .status(SupportStatus.NEW)
                 .user(user)
+                .readByUser(true)
+                .readByAdmin(false)
                 .build();
 
         SupportMessage message = SupportMessage.builder()
@@ -89,31 +132,28 @@ public class SupportService {
     }
 
     public SupportResponse closeSupportTicket(Authentication authentication, Long id){
-        User admin = userCache.findUserByUsername(authentication.getName());
-        if (!userService.isAdmin(admin)){
+        if (!checkAdminAccess(authentication)){
             throw new AdminAccessRequiredException();
         }
-
-        Support support = getSupportById(id);
+        Support support = findSupportById(id);
         support.setStatus(SupportStatus.CLOSED);
+        support.setReadByUser(false);
         supportRepository.save(support);
         return supportMapper.toSupportResponse(support);
     }
 
     @Transactional
     public SupportResponse reopenSupportTicket(Authentication authentication, Long id) {
-        User admin = userCache.findUserByUsername(authentication.getName());
-        if (!userService.isAdmin(admin)) {
+        if (!checkAdminAccess(authentication)){
             throw new AdminAccessRequiredException();
         }
-        Support support = getSupportById(id);
+        Support support = findSupportById(id);
         if (support.getStatus() != SupportStatus.CLOSED) {
-            //TODO Сделать норм эксепшн
-            throw new IllegalStateException("Можно повторно открыть только закрытые обращения");
+            throw new TicketNotClosedException();
         }
-
         support.setStatus(SupportStatus.OPEN);
         support.setUpdatedAt(LocalDateTime.now());
+        support.setReadByUser(false);
         supportRepository.save(support);
 
         return supportMapper.toSupportResponse(support);
@@ -121,19 +161,16 @@ public class SupportService {
 
     @Transactional
     public SupportResponse escalateSupportTicket(Authentication authentication, Long id) {
-        User admin = userCache.findUserByUsername(authentication.getName());
-        if (!userService.isAdmin(admin)) {
+        if (!checkAdminAccess(authentication)){
             throw new AdminAccessRequiredException();
         }
-        Support support = getSupportById(id);
-
+        Support support = findSupportById(id);
         if (support.getStatus() == SupportStatus.ESCALATED) {
-            //TODO Сделать норм эксепшн
-            throw new IllegalStateException("Обращение уже эскалировано");
+            throw new TicketIsEscalatedException();
         }
-
         support.setStatus(SupportStatus.ESCALATED);
         support.setUpdatedAt(LocalDateTime.now());
+        support.setReadByUser(false);
         supportRepository.save(support);
 
         return supportMapper.toSupportResponse(support);

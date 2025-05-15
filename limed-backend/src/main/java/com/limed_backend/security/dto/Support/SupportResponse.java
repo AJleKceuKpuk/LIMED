@@ -22,4 +22,6 @@ public class SupportResponse implements Serializable {
     private LocalDateTime updatedAt;
     private String username;
 
+    private boolean readByUser;
+    private boolean readByAdmin;
 }

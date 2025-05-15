@@ -23,29 +23,30 @@ import java.util.List;
 public class ChatsController {
 
     private final ChatsService chatsService;
+    private final MessagesService messagesService;
+    private final UserCacheService userCache;
 
-
-    //Все чаты пользователя
+    /** Все чаты пользователя */
     @GetMapping
     public ResponseEntity<List<ChatResponse>> getAllChatByUser(Authentication authentication){
         List<ChatResponse> chats = chatsService.findAllChatsUser(authentication);
         return ResponseEntity.ok(chats);
     }
 
-    //общий чат
+    /** Общий чат*/
     @GetMapping("/all")
     public ResponseEntity<AllChatResponse> getChats(){
         return ResponseEntity.ok(chatsService.findAllChat());
     }
 
-    //чат по id
+    /** Поиск чата по Id*/
     @GetMapping("/chat={id}")
     public ResponseEntity<ChatResponse> getChatById(Authentication authentication, @PathVariable Long id){
         ChatResponse chat = chatsService.findChatById(id, authentication);
         return ResponseEntity.ok(chat);
     }
 
-
+    /** Создание чата*/
     @PostMapping("/create")
     public ResponseEntity<ChatResponse> createChat(Authentication authentication,
                                                    @RequestBody CreateChatRequest request){
@@ -53,6 +54,7 @@ public class ChatsController {
         return ResponseEntity.ok(chat);
     }
 
+    /** Изменение имени чата*/
     @PostMapping("/rename")
     public ResponseEntity<ChatResponse> renameChat(Authentication authentication,
                                                        @RequestBody RenameChatRequest request){
@@ -60,6 +62,7 @@ public class ChatsController {
         return ResponseEntity.ok(chat);
     }
 
+    /** Добавление пользователей в чат*/
     @PostMapping("/add-user")
     public ResponseEntity<ChatResponse> addUsersToChat(Authentication authentication,
                                                        @RequestBody UsersChatRequest request){
@@ -67,6 +70,7 @@ public class ChatsController {
         return ResponseEntity.ok(chat);
     }
 
+    /** Удаление пользователей из чата*/
     @PostMapping("/remove-user")
     public ResponseEntity<ChatResponse> removeUserFromChat(Authentication authentication,
                                                        @RequestBody UsersChatRequest request){
@@ -74,6 +78,7 @@ public class ChatsController {
         return ResponseEntity.ok(chat);
     }
 
+    /** Удаление чата*/
     @PostMapping("/remove-chat/{id}")
     public ResponseEntity<ChatResponse> removeChat(Authentication authentication,
                                                            @PathVariable Long id){
@@ -81,6 +86,7 @@ public class ChatsController {
         return ResponseEntity.ok(chat);
     }
 
+    /** Выход из чата*/
     @PostMapping("/leave-chat/{id}")
     public ResponseEntity<String> leaveFromChat(Authentication authentication,
                                                 @PathVariable Long id){
@@ -88,5 +94,42 @@ public class ChatsController {
         return ResponseEntity.ok(result);
     }
 
+    /** Список всех сообщений постранично*/
+    @GetMapping("/chat={chatId}/messages")
+    public ResponseEntity<Page<MessageResponse>> getChatMessages(Authentication authentication,
+                                                                 @PathVariable Long chatId,
+                                                                 @RequestParam(defaultValue = "0") int page,
+                                                                 @RequestParam(defaultValue = "20") int size) {
+        Page<MessageResponse> messages = messagesService.findMessagesFromChat(authentication, chatId, size, page);
+        return ResponseEntity.ok(messages);
+    }
 
+    /** Создание сообщения*/
+    @PostMapping("/chat={chatId}/create-message")
+    public ResponseEntity<MessageResponse> createMessage(Authentication authentication,
+                                                         @RequestBody MessageRequest request){
+        MessageResponse message = messagesService.createMessage(authentication, request);
+        return ResponseEntity.ok(message);
+    }
+
+    @PostMapping("/chat={chatId}/edit-message")
+    public ResponseEntity<MessageResponse> editMessage(Authentication authentication,
+                                                       @RequestBody MessageRequest request) {
+        MessageResponse message = messagesService.editMessage(authentication, request);
+        return ResponseEntity.ok(message);
+    }
+
+    @PostMapping("/chat={chatId}/delete-message")
+    public ResponseEntity<String> deleteMessage(Authentication authentication,
+                                                @RequestBody MessageRequest request) {
+        String message = messagesService.deleteMessage(authentication, request);
+        return ResponseEntity.ok(message);
+    }
+
+    @GetMapping("/unread")
+    public ResponseEntity<Long> unreadMessages(Authentication authentication){
+        User user = userCache.findUserByUsername(authentication.getName());
+        Long unreadCount = messagesService.countUnreadMessages(user);
+        return ResponseEntity.ok(unreadCount);
+    }
 }

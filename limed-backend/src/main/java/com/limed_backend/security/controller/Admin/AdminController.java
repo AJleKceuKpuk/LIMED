@@ -1,4 +1,4 @@
-package com.limed_backend.security.controller;
+package com.limed_backend.security.controller.Admin;
 
 import com.limed_backend.security.dto.Chat.RenameChatRequest;
 import com.limed_backend.security.dto.Chat.ChatResponse;

@@ -1,6 +1,6 @@
 package com.limed_backend.security.service;
 
-import com.limed_backend.security.dto.Contact.FriendUsernameRequest;
+import com.limed_backend.security.dto.Contact.ContactAddRequest;
 import com.limed_backend.security.dto.Contact.NoFriendResponse;
 import com.limed_backend.security.dto.Contact.FriendResponse;
 import com.limed_backend.security.entity.Contacts;
@@ -87,56 +87,14 @@ public class ContactsService {
 
     // Метод добавления дружбы
     @Transactional
-    public String addContacts(Authentication authentication, Long receiverId) {
+    public String addContacts(Authentication authentication, ContactAddRequest request) {
         User sender = userCache.findUserByUsername(authentication.getName());
-        User receiver = userCache.findUserById(receiverId);
-
-        if (sender.getId().equals(receiverId)) {
-            return "Вы не можете себе отправить дружбу";
+        User receiver;
+        if (request.getId() != null){
+            receiver = userCache.findUserById(request.getId());
+        }else {
+            receiver = userCache.findUserByUsername(request.getUsername());
         }
-
-        Optional<Contacts> alreadyIgnored = findDirectStatus(receiver.getId(),sender.getId(), "Ignore");
-        if(alreadyIgnored.isPresent()) {
-            return "Пользователь заблокировал Вас";
-        }
-        if (isAcceptedContacts(sender.getId(), receiver.getId())) {
-            return "Пользователь является вашим другом";
-        }
-        Optional<Contacts> pending = findDirectStatus(sender.getId(), receiver.getId(), "Pending");
-        if (pending.isPresent()) {
-            return "Предложение подружиться уже отправлено";
-        }
-        Optional<Contacts> invite = findDirectStatus(receiver.getId(), sender.getId(), "Pending");
-        if (invite.isPresent()) {
-            Contacts contact = invite.get();
-            contact.setStatus("Accepted");
-            contactsRepository.save(contact);
-
-            contactsCache.removeContactsFromCache(receiver, contact, "contacts-pending");
-            contactsCache.removeContactsFromCache(sender, contact, "contacts-invite");
-            contactsCache.addContactToCache(sender, contact, "contacts");
-            contactsCache.addContactToCache(receiver, contact, "contacts");
-
-            return "Предложение подружиться принято";
-        }
-
-        Contacts newContact = Contacts.builder()
-                .sender(sender)
-                .receiver(receiver)
-                .status("Pending")
-                .build();
-        contactsRepository.save(newContact);
-
-        contactsCache.addContactToCache(sender, newContact, "contacts-pending");
-        contactsCache.addContactToCache(receiver, newContact, "contacts-pending");
-
-        return "Предложение подружиться отправлено";
-    }
-
-    //метод добавления дружбы по имени
-    public String addContactsByUsername(Authentication authentication, FriendUsernameRequest request) {
-        User sender = userCache.findUserByUsername(authentication.getName());
-        User receiver = userCache.findUserByUsername(request.getUsername());
 
         if (sender.getId().equals(receiver.getId())) {
             return "Вы не можете себе отправить дружбу";
@@ -181,11 +139,16 @@ public class ContactsService {
     }
 
     //Добавить в черный список
-    public String addIgnore(Authentication authentication, Long receiverId) {
+    public String addIgnore(Authentication authentication, ContactAddRequest request) {
         User sender = userCache.findUserByUsername(authentication.getName());
-        User receiver = userCache.findUserById(receiverId);
+        User receiver;
+        if (request.getId() != null){
+            receiver = userCache.findUserById(request.getId());
+        }else {
+            receiver = userCache.findUserByUsername(request.getUsername());
+        }
 
-        if (sender.getId().equals(receiverId)) {
+        if (sender.getId().equals(request.getId())) {
             return "Вы не можете игнорировать себя";
         }
         if (isAcceptedContacts(sender.getId(), receiver.getId())) {

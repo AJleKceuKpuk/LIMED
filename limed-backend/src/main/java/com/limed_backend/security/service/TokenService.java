@@ -116,7 +116,9 @@ public class TokenService {
         Cache tokenCache = cacheManager.getCache("tokenCache");
         for (Token token : tokens) {
             token.setRevoked(true);
-            tokenCache.evict(token.getJti());
+            if (tokenCache != null) {
+                tokenCache.evict(token.getJti());
+            }
         }
         tokenRepository.saveAll(tokens);
     }

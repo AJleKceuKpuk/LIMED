@@ -32,7 +32,6 @@ public class ChatsService {
     private final EntityManager entityManager;
     private final UserCacheService userCache;
     private final ChatsCacheService chatsCache;
-    //private final MessagesService messagesService;
     private final ApplicationEventPublisher eventPublisher;
 
     //==========================СПИСКИ ЧАТОВ===========================//
