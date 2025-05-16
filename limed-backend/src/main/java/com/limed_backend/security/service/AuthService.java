@@ -27,7 +27,7 @@ public class AuthService {
     private final TokenCacheService tokenCache;
 
 
-    // регистрация пользователей
+    /** Регистрация пользователей*/
     public String registration(RegistrationRequest request) {
         userService.validateUsernameAvailability(request.getUsername());
         userService.validateEmailAvailability(request.getEmail());
@@ -35,7 +35,7 @@ public class AuthService {
         return "Пользователь зарегистрирован";
     }
 
-    // вход пользователя и его проверка
+    /** Вход пользователя и его проверка*/
     public TokenResponse login(HttpServletRequest request, LoginRequest loginRequest, HttpServletResponse response) {
         try {
             authenticationManager.authenticate(
@@ -49,7 +49,7 @@ public class AuthService {
         return tokenService.generateAndSetTokens(request, user, response);
     }
 
-    // Логика выхода
+    /** Выход пользователя*/
     public ResponseEntity<String> logout(HttpServletRequest request, HttpServletResponse response) {
         tokenService.revokeRefreshTokenFromCookies(request, response);
         String accessToken = jwtCore.getJwtFromHeader(request);

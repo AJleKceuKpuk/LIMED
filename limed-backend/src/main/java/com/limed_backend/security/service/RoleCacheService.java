@@ -13,6 +13,7 @@ public class RoleCacheService {
 
     private final RoleRepository roleRepository;
 
+    /** Поиск роли в добавление в кэш*/
     @Cacheable(value = "roleCache", key = "#role")
     public Role getRole(String role){
         return roleRepository.findByName(role)

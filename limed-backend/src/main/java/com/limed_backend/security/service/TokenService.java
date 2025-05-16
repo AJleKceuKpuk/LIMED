@@ -32,7 +32,7 @@ public class TokenService {
     private final CacheManager cacheManager;
     private final TokenCacheService tokenCache;
 
-    // Проверяет, что access токен существует в базе и не отозван
+    /** Проверка, что Access токен существует в базе и не отозван*/
     private void validateAccessTokenRecord(Claims accessClaims) {
         String accessJti = accessClaims.getId();
         Token accessTokenRecord = tokenCache.getTokenByJti(accessJti);
@@ -40,8 +40,7 @@ public class TokenService {
             throw new JwtException("Access токен отозван или не найден");
         }
     }
-
-    // Сверяет, что refresh и access токены принадлежат одному пользователю
+    /** Проверка, что Refresh и Access токены принадлежат одному пользователю*/
     private void validateTokenOwnership(String refreshToken, Claims accessClaims) {
         String usernameFromAccess = accessClaims.getSubject();
         String usernameFromRefresh = jwtCore.getUsernameFromToken(refreshToken);
@@ -50,7 +49,8 @@ public class TokenService {
         }
     }
 
-    //запись Access токена в базу данных
+
+    /** Запись Access токена в базу данных*/
     public String issueAccessToken(HttpServletRequest request, String username) {
         String token = jwtCore.generateAccessToken(username);
         String jti = jwtCore.getJti(token);
@@ -60,8 +60,7 @@ public class TokenService {
         tokenRepository.save(record);
         return token;
     }
-
-    //запись Refresh токена в базу данных
+    /** Запись Refresh токена в базу данных*/
     public String issueRefreshToken(HttpServletRequest request, String username) {
         String token = jwtCore.generateRefreshToken(username);
         String jti = jwtCore.getJti(token);
@@ -72,7 +71,8 @@ public class TokenService {
         return token;
     }
 
-    // создание и выдача токенов в куки и в тело ответа
+
+    /** Cоздание и выдача токенов в куки и в тело ответа*/
     public TokenResponse generateAndSetTokens(HttpServletRequest request, User user, HttpServletResponse response) {
         String newAccessToken = issueAccessToken(request, user.getUsername());
         String newRefreshToken = issueRefreshToken(request, user.getUsername());
@@ -80,7 +80,7 @@ public class TokenService {
         return new TokenResponse(newAccessToken);
     }
 
-    // Логика обновления Access токена
+    /** Обновление Access токена*/
     public String refreshAccessToken(HttpServletRequest request) {
         String refreshToken = extractRefreshTokenFromCookies(request);
         jwtCore.validateToken(refreshToken, "refresh");
@@ -97,7 +97,7 @@ public class TokenService {
         return issueAccessToken(request, usernameFromAccess);
     }
 
-    // Извлекает Refresh Токен Куки
+    /** Извлечение Refresh Токен из Куки*/
     private String extractRefreshTokenFromCookies(HttpServletRequest request) {
         if (request.getCookies() != null) {
             for (Cookie cookie : request.getCookies()) {
@@ -109,7 +109,7 @@ public class TokenService {
         return null;
     }
 
-    //Отзыв всех токенов пользователя и БД
+    /** Отзыв всех токенов пользователя из БД и Кэша*/
     @Transactional
     public void revokeAllTokens(String username) {
         List<Token> tokens = tokenRepository.findByUsernameAndRevokedFalse(username);
@@ -123,7 +123,7 @@ public class TokenService {
         tokenRepository.saveAll(tokens);
     }
 
-    // Отзыв Refresh токена и очистка куки на клиенте
+    /**Отзыв Refresh токена и очистка куки на клиенте*/
     public void revokeRefreshTokenFromCookies(HttpServletRequest request, HttpServletResponse response) {
         Cookie[] cookies = request.getCookies();
         if (cookies == null) {
@@ -144,7 +144,7 @@ public class TokenService {
         }
     }
 
-    // Добавление RefreshToken в куки
+    /** Добавление RefreshToken в куки*/
     public void addRefreshTokenCookie(String refreshToken, HttpServletResponse response) {
         Cookie refreshTokenCookie = new Cookie("refreshToken", refreshToken);
         refreshTokenCookie.setHttpOnly(true);
@@ -154,7 +154,7 @@ public class TokenService {
         response.addCookie(refreshTokenCookie);
     }
 
-    //под-метод для удаления куки
+    /** Под-метод для удаления куки*/
     private void clearCookie(Cookie cookie, HttpServletResponse response) {
         cookie.setValue(null);
         cookie.setPath("/");
@@ -162,13 +162,14 @@ public class TokenService {
         response.addCookie(cookie);
     }
 
-    // Расчет времени жизни куки Refresh токена
+    /** Расчет времени жизни куки Refresh токена*/
     private int cookieLifetime(String refreshToken) {
         Date refreshExpiration = jwtCore.getExpirationFromToken(refreshToken);
         return (int) ((refreshExpiration.getTime() - System.currentTimeMillis()) / 1000);
     }
 
-    //ежедневная проверка токенов для удаления старых, которые истекли (в 8:00)
+
+   /** ежедневная проверка токенов для удаления старых, которые истекли (в 8:00)*/
     @Scheduled(cron = "0 0 8 * * ?")
     @Transactional
     public void cleanupExpiredTokens() {

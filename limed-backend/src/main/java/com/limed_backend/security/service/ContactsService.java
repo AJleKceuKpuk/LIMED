@@ -26,9 +26,8 @@ public class ContactsService {
     private final UserCacheService userCache;
     private final ContactsCacheService contactsCache;
 
-    //================= СПИСКИ =================//
 
-    // Список всех друзей пользователя
+    /** Список всех друзей пользователя*/
     public List<FriendResponse> findAcceptContacts(User user) {
         System.out.println("find?");
         List<Contacts> contacts = contactsCache.findAllAccept(user.getId());
@@ -37,8 +36,7 @@ public class ContactsService {
                 .map(contact -> contactsMapper.toFriendResponse(contact, user.getId()))
                 .collect(Collectors.toList());
     }
-
-    // Исходящие заявки
+    /** Исходящие заявки*/
     public List<NoFriendResponse> findPendingContacts(Authentication authentication) {
         User sender = userCache.findUserByUsername(authentication.getName());
         List<Contacts> pendingContacts = contactsCache.findAllPending(sender.getId());
@@ -46,8 +44,7 @@ public class ContactsService {
                 .map(contact -> contactsMapper.toNoFriendResponse(contact, sender.getId()))
                 .collect(Collectors.toList());
     }
-
-    // Входящие заявки
+    /** Входящие заявки*/
     public List<NoFriendResponse> findInviteContacts(Authentication authentication) {
         User receiver = userCache.findUserByUsername(authentication.getName());
 
@@ -56,8 +53,7 @@ public class ContactsService {
                 .map(contact -> contactsMapper.toNoFriendResponse(contact, receiver.getId()))
                 .collect(Collectors.toList());
     }
-
-    //Черный список
+    /** Черный список*/
     public List<NoFriendResponse> findIgnoreContacts(Authentication authentication) {
         User sender = userCache.findUserByUsername(authentication.getName());
         List<Contacts> ignoreContacts = contactsCache.findAllIgnore(sender.getId());
@@ -66,26 +62,22 @@ public class ContactsService {
                 .collect(Collectors.toList());
     }
 
-    //================= ПРОВЕРКИ =================//
 
-    // Поиск связи между пользователями со статусом Accepted
+    /** Поиск связи между пользователями со статусом Accepted*/
     public Optional<Contacts> findContactsAccepted(Long senderId, Long receiverId) {
         return contactsRepository.findContactBetween(senderId, receiverId, "Accepted");
     }
-
-    //поиск связи в одну сторону
+    /** Поиск связи в одну сторону*/
     public Optional<Contacts> findDirectStatus(Long senderId, Long receiverId, String status){
         return contactsRepository.findDirectContact(senderId, receiverId, status);
     }
-
-    //проверка, что дружба реально существует
+    /** Проверка, что дружба реально существует*/
     public boolean isAcceptedContacts(Long senderId, Long receiverId){
         return contactsRepository.findContactBetween(senderId, receiverId, "Accepted").isPresent();
     }
 
-    //================= МЕТОДЫ =================//
 
-    // Метод добавления дружбы
+    /** Метод добавления в друзья*/
     @Transactional
     public String addContacts(Authentication authentication, ContactAddRequest request) {
         User sender = userCache.findUserByUsername(authentication.getName());
@@ -137,8 +129,7 @@ public class ContactsService {
 
         return "Предложение подружиться отправлено";
     }
-
-    //Добавить в черный список
+    /** Добавить в черный список*/
     public String addIgnore(Authentication authentication, ContactAddRequest request) {
         User sender = userCache.findUserByUsername(authentication.getName());
         User receiver;
@@ -189,8 +180,7 @@ public class ContactsService {
 
         return "Пользователь заблокирован";
     }
-
-    // Метод принятия дружбы
+    /** Метод принятия дружбы*/
     public String acceptContacts(Authentication authentication, Long senderId) {
         User receiver = userCache.findUserByUsername(authentication.getName());
         User sender = userCache.findUserById(senderId);
@@ -212,8 +202,7 @@ public class ContactsService {
 
         return "Предложение принято";
     }
-
-    // Метод отказа от дружбы (отклонения входящего предложения)
+    /** Метод отказа от дружбы (отклонения входящего предложения)*/
     public String cancelContacts(Authentication authentication, Long senderId) {
         User receiver = userCache.findUserByUsername(authentication.getName());
         User sender = userCache.findUserById(senderId);
@@ -234,8 +223,7 @@ public class ContactsService {
 
         return "Предложение отклонено";
     }
-
-    // Метод удаления друга
+    /** Метод удаления друга*/
     public String deleteContacts(Authentication authentication, Long senderId) {
         User receiver = userCache.findUserByUsername(authentication.getName());
         User sender = userCache.findUserById(senderId);
@@ -253,8 +241,7 @@ public class ContactsService {
 
         return "Пользователь удален из списка друзей";
     }
-
-    //Удалить из черного списка
+    /** Удалить из черного списка*/
     public String deleteIgnore(Authentication authentication, Long receiverId) {
         User sender = userCache.findUserByUsername(authentication.getName());
         User receiver = userCache.findUserById(receiverId);
@@ -268,4 +255,5 @@ public class ContactsService {
 
         return "Пользователь " + receiver.getUsername() + " разблокирован";
     }
+
 }

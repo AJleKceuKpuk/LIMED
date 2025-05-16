@@ -60,7 +60,7 @@ public class UserService {
             throw new InvalidOldPasswordException();
         }
     }
-    /**ONLY ADMIN Проверка на роль Admin*/
+    /** [ADMIN] Проверка на роль Admin*/
     public boolean isAdmin(User user) {
         return user.getRoles().stream().anyMatch(role -> "ADMIN".equals(role.getName()));
     }
@@ -76,7 +76,7 @@ public class UserService {
         User user = userCache.findUserById(id);
         return userMapper.toUserResponse(user);
     }
-    /** ONLY ADMIN Получение всех пользователей постранично*/
+    /** [ADMIN]  Получение всех пользователей постранично*/
     public Page<UserResponse> getAllUsers(int size, int page){
         Pageable pageable = PageRequest.of(page, size, Sort.by("username"));
         Page<User> users = userRepository.getAllUsers(pageable);
@@ -133,7 +133,7 @@ public class UserService {
 
         return tokenService.generateAndSetTokens(request, user, response);
     }
-    /** ONLY ADMIN изменение username пользователя принудительно */
+    /** [ADMIN] изменение username пользователя принудительно */
     @Transactional
     public String editUsername(UpdateUsernameRequest request, Long id){
         User user = userCache.findUserById(id);
@@ -157,7 +157,7 @@ public class UserService {
         userCache.addUserCache(user);
         return "Email успешно обновлён";
     }
-    /** ONLY ADMIN Изменение Email пользователя принудительно */
+    /** [ADMIN] Изменение Email пользователя принудительно */
     @Transactional
     public String editEmail(UpdateEmailRequest request, Long id){
         User user = userCache.findUserById(id);
@@ -178,7 +178,7 @@ public class UserService {
         userRepository.save(user);
         return "Пароль успешно обновлён";
     }
-    /** ONLY ADMIN Редактирование Ролей пользователя */
+    /** [ADMIN] Редактирование Ролей пользователя */
     @Transactional
     public String editRole(UpdateRoleRequest request) {
         User user = userCache.findUserById(request.getId());

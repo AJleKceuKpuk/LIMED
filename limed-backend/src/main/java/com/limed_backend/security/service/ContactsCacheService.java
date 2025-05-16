@@ -19,28 +19,25 @@ public class ContactsCacheService {
     private final CacheManager cacheManager;
     private final ContactsRepository contactsRepository;
 
-    //Список друзей
+    /** Получение списка друзей и добавление его в кэш*/
     @Cacheable(value = "contacts", key = "#id")
     public List<Contacts> findAllAccept(Long id){
         return contactsRepository.findAcceptedByUser(id)
                 .orElseGet(ArrayList::new);
     }
-
-    //Список игнорируемых
+    /** Получение черного списка и добавление его в кэш*/
     @Cacheable(value = "contacts-ignore", key = "#id")
     public List<Contacts> findAllIgnore(Long id){
         return contactsRepository.findIgnoreByUser(id)
                 .orElseGet(ArrayList::new);
     }
-
-    //список исходящих
+    /** Получение списка исходящих предложений*/
     @Cacheable(value = "contacts-pending", key = "#id")
     public List<Contacts> findAllPending(Long id){
         return contactsRepository.findPendingByUser(id)
                 .orElseGet(ArrayList::new);
     }
-
-    //список входящих
+    /** Получение списка входящих предложений*/
     @Cacheable(value = "contacts-invite", key = "#id")
     public List<Contacts> findAllInvite(Long id){
         return contactsRepository.findInviteByUser(id)
@@ -48,7 +45,7 @@ public class ContactsCacheService {
     }
 
 
-    //извлекаем из указанного кэша список контактов
+    /** Извлечение из указанного кэша списка контактов*/
     public List<Contacts> getListContactsFromCache(Cache cache, User user) {
         List<?> rawList = cache.get(user.getId(), List.class);
         List<Contacts> listContacts = new ArrayList<>();
@@ -62,7 +59,7 @@ public class ContactsCacheService {
         return listContacts;
     }
 
-    //метод удаления контакта из кэша
+    /** метод удаления контакта из кэша*/
     public void removeContactsFromCache(User user, Contacts contact, String typeCache) {
         Cache cache = cacheManager.getCache(typeCache);
         List<Contacts> contacts = null;
@@ -86,8 +83,7 @@ public class ContactsCacheService {
             cache.put(user.getId(), contacts);
         }
     }
-
-    //метод добавления контакта в кэш
+    /** метод добавления контакта в кэш */
     public void addContactToCache(User user, Contacts contact, String typeCache) {
         Cache cache = cacheManager.getCache(typeCache);
         List<Contacts> contacts = null;

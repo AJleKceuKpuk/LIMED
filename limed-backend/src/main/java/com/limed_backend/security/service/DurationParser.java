@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 public class DurationParser {
     private static final Pattern DURATION_PATTERN = Pattern.compile("(\\d+)\\s*([smhdSMHD])");
 
+    /** Парсер из строки в срок */
     public static Duration parseDuration(String input) {
         Matcher matcher = DURATION_PATTERN.matcher(input);
         if (matcher.matches()) {
